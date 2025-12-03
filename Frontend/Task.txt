@@ -1,0 +1,8 @@
+find what I have installed using npm 
+add animations when scroll
+change the images
+change the color combination of home page
+Add relavant things in home page
+check the format of the code and correct it..
+proceed to Alumni dashboard.....
+all things are working fine...

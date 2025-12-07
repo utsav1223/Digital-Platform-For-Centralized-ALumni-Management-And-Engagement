@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Menu, X, Bell, Search } from 'lucide-react';
-import Sidebar from './sidebar.jsx';
-import Jobs from './jobs.jsx';
+import Sidebar from './Sidebar.jsx';
+import Jobs from './Jobs.jsx';
 // Ensure the filename matches exactly what you saved (e.g. CommunityFeed.jsx)
 import CommunityFeed from './Communityfeed.jsx'; 
 import EventsSection from './Eventssection.jsx';

@@ -8,7 +8,7 @@ import AdminDashboard from './Pages/admindashboard/admin-components/switcher.jsx
 import Adminlogin from './Pages/admindashboard/Admin-login/adminLogin.jsx'; 
 import Register from './Pages/Register/Register.jsx';
 import ProtectedRoute from './Pages/admindashboard/admin-components/ProtectedRoute.jsx';
-
+import AlumniDashboard from './Pages/alumnidashboard/start.jsx';
 function App() {
   return (
     <Router>
@@ -23,6 +23,8 @@ function App() {
 
         {/* Keep plain /admin -> admin login */}
         <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+        {/* Alumni Dashboard */}
+        <Route path="/alumnidashboard" element={<AlumniDashboard/>}/>
 
         {/* Explicitly protect the dashboard route */}
         <Route

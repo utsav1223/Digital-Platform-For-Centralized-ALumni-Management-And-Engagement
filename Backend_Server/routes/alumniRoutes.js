@@ -1,9 +1,11 @@
 import express from "express";
-import { registerAlumni } from "../controllers/alumniController.js";
+import { registerAlumni, loginAlumni } from "../controllers/alumniControllers.js";
+
+console.log("🔥 Alumni Routes File Loaded!");
 
 const router = express.Router();
 
-// Register API
 router.post("/register", registerAlumni);
+router.post("/login", loginAlumni);
 
 export default router;

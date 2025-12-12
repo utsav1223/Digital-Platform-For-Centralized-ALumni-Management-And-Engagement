@@ -3,7 +3,7 @@ import {
   Calendar, MapPin, Video, Users, 
   ChevronRight, Clock, ArrowUpRight, 
   Filter, Search, MoreHorizontal, Plus, X, 
-  Sparkles, Bell
+  Sparkles, Bell, AlignLeft, Tag 
 } from 'lucide-react';
 
 // --- MOCK DATA ---
@@ -18,6 +18,7 @@ const INITIAL_EVENTS = [
     startDate: "2024-10-24",
     endDate: "2024-10-24",
     time: "6:00 PM - 9:00 PM",
+    description: "Join over 100+ SaaS founders for an evening of networking, insights, and pizza. We will have guest speakers from YC and Techstars discussing the current fundraising climate.",
     attendees: 142,
     avatars: [
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100",
@@ -37,6 +38,7 @@ const INITIAL_EVENTS = [
     startDate: "2024-11-02",
     endDate: "2024-11-02",
     time: "10:00 AM - 2:00 PM",
+    description: "Deep dive into Compound Components, Render Props, and Custom Hooks. This 4-hour workshop is designed for developers who want to scale their React architecture.",
     attendees: 850,
     avatars: [
       "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=100",
@@ -47,7 +49,7 @@ const INITIAL_EVENTS = [
   }
 ];
 
-// --- HELPER: Format 24h time (14:00) to 12h (2:00 PM) ---
+// --- HELPER: Format Time ---
 const formatTime12h = (time24h) => {
   if (!time24h) return '';
   const [hours, minutes] = time24h.split(':');
@@ -60,23 +62,39 @@ const formatTime12h = (time24h) => {
 export default function EventsPage() {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [events, setEvents] = useState(INITIAL_EVENTS);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // --- Category Filter State ---
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const categories = ['All', 'Networking', 'Workshop', 'Conference', 'Webinar'];
 
-  // Form State - Now includes separate startTime and endTime
+  // --- Modal States ---
+  const [isHostModalOpen, setIsHostModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null); 
+
+  // Form State
   const [formData, setFormData] = useState({
     title: '', 
     category: 'Networking', 
     type: 'Online', 
     startDate: '', 
     endDate: '', 
-    startTime: '', // New Strict Field
-    endTime: '',   // New Strict Field
-    location: ''
+    startTime: '', 
+    endTime: '', 
+    location: '',
+    description: ''
   });
 
+  // --- Filter Logic ---
   const filteredEvents = events.filter(event => {
-    if (activeTab === 'hosted') return event.isHostedByMe;
-    return event.status === activeTab && !event.isHostedByMe; 
+    // 1. Tab Filter
+    const matchesTab = activeTab === 'hosted' 
+      ? event.isHostedByMe 
+      : (event.status === activeTab && !event.isHostedByMe);
+    
+    // 2. Category Filter
+    const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory;
+
+    return matchesTab && matchesCategory;
   });
 
   const handleCreateEvent = (e) => {
@@ -84,20 +102,13 @@ export default function EventsPage() {
     const dateObj = new Date(formData.startDate);
     const month = dateObj.toLocaleString('default', { month: 'short' }).toUpperCase();
     const day = dateObj.getDate();
-
-    // Combine strict times into a display string (e.g., "10:00 AM - 11:30 AM")
     const timeDisplay = `${formatTime12h(formData.startTime)} - ${formatTime12h(formData.endTime)}`;
 
     const newEvent = {
       id: Date.now(),
-      title: formData.title,
-      category: formData.category,
-      type: formData.type,
-      location: formData.location,
+      ...formData,
       date: { month, day },
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      time: timeDisplay, // Using the formatted string
+      time: timeDisplay,
       attendees: 1,
       avatars: ["https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=100"],
       status: "upcoming",
@@ -105,32 +116,29 @@ export default function EventsPage() {
     };
 
     setEvents([newEvent, ...events]);
-    setIsModalOpen(false);
+    setIsHostModalOpen(false);
     setActiveTab('hosted'); 
     setFormData({ 
       title: '', category: 'Networking', type: 'Online', 
-      startDate: '', endDate: '', startTime: '', endTime: '', location: '' 
+      startDate: '', endDate: '', startTime: '', endTime: '', location: '', description: ''
     });
   };
 
   return (
-    <div className="w-full min-h-screen bg-slate-50/50 relative">
+    <div className="w-full min-h-screen bg-slate-50/50 relative font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* --- UNIFIED HEADER SECTION --- */}
+        {/* --- HEADER --- */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
               Events & Webinars
             </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Connect, learn, and grow with the community.
-            </p>
+            <p className="text-slate-500 text-sm mt-1">Connect, learn, and grow with the community.</p>
           </div>
-
           <div className="flex items-center gap-3 w-full md:w-auto">
              <div className="relative flex-1 md:w-64 group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input type="text" placeholder="Search events..." className="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none" />
              </div>
              <div className="h-6 w-px bg-slate-200 hidden md:block"></div>
@@ -139,15 +147,12 @@ export default function EventsPage() {
                     <Bell className="w-5 h-5" />
                     <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
                 </button>
-                <button className="p-2.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors border border-transparent hover:border-indigo-100">
-                    <Filter className="w-5 h-5" />
-                </button>
              </div>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="border-b border-slate-200 mb-8">
+        {/* --- TABS --- */}
+        <div className="border-b border-slate-200 mb-6">
             <div className="flex gap-8 overflow-x-auto no-scrollbar">
                 <TabLink label="Upcoming" count={events.filter(e => e.status === 'upcoming' && !e.isHostedByMe).length} active={activeTab === 'upcoming'} onClick={() => setActiveTab('upcoming')} />
                 <TabLink label="Past" active={activeTab === 'past'} onClick={() => setActiveTab('past')} />
@@ -155,19 +160,56 @@ export default function EventsPage() {
             </div>
         </div>
 
-        {/* Content Grid */}
+        {/* --- UPDATED: CATEGORY FILTER BAR WITH FUNCTIONAL RESET --- */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-6 scrollbar-hide">
+          
+          {/* Functional Reset Button */}
+          <button 
+            onClick={() => setSelectedCategory('All')}
+            className={`
+              flex items-center justify-center w-8 h-8 rounded-full mr-2 shrink-0 transition-all border shadow-sm
+              ${selectedCategory !== 'All' 
+                ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100 cursor-pointer' 
+                : 'bg-white text-slate-400 border-slate-200 cursor-default'}
+            `}
+            title={selectedCategory !== 'All' ? "Clear Filter" : "Filter"}
+          >
+             {selectedCategory !== 'All' ? <X size={14} /> : <Filter size={14} />}
+          </button>
+
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`
+                px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border
+                ${selectedCategory === cat 
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-md' 
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}
+              `}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* --- CONTENT GRID --- */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {activeTab === 'hosted' && (
-             <HostEventCard onClick={() => setIsModalOpen(true)} />
+             <HostEventCard onClick={() => setIsHostModalOpen(true)} />
           )}
           {filteredEvents.length > 0 ? (
             filteredEvents.map(event => (
-              <EventCard key={event.id} event={event} />
+              <EventCard 
+                key={event.id} 
+                event={event} 
+                onClick={() => setSelectedEvent(event)} 
+              />
             ))
           ) : (
             activeTab !== 'hosted' && (
                <div className="col-span-full">
-                  <EmptyState type={activeTab} />
+                  <EmptyState type={activeTab} onClear={() => setSelectedCategory('All')} />
                </div>
             )
           )}
@@ -175,12 +217,12 @@ export default function EventsPage() {
       </div>
 
       {/* --- HOST EVENT MODAL --- */}
-      {isModalOpen && (
+      {isHostModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <h3 className="font-bold text-lg text-slate-800">Host New Event</h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-1 rounded-full hover:bg-slate-200 text-slate-400 transition-colors">
+              <button onClick={() => setIsHostModalOpen(false)} className="p-1 rounded-full hover:bg-slate-200 text-slate-400 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -195,6 +237,21 @@ export default function EventsPage() {
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                     value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})}
                   />
+                </div>
+
+                {/* Description Field */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Description</label>
+                  <div className="relative">
+                    <AlignLeft className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                    <textarea 
+                      required rows="3"
+                      placeholder="What is this event about?"
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all resize-none"
+                      value={formData.description} 
+                      onChange={e => setFormData({...formData, description: e.target.value})}
+                    />
+                  </div>
                 </div>
 
                 {/* Date Grid */}
@@ -215,19 +272,15 @@ export default function EventsPage() {
                    </div>
                 </div>
 
-                {/* NEW: STRICT TIME GRID */}
+                {/* Time Grid */}
                 <div className="grid grid-cols-2 gap-4">
                    <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Start Time</label>
                       <div className="relative">
                           <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                          
-                          <input 
-                            required 
-                            type="time" 
+                          <input required type="time" 
                             className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500"
-                            value={formData.startTime} 
-                            onChange={e => setFormData({...formData, startTime: e.target.value})}
+                            value={formData.startTime} onChange={e => setFormData({...formData, startTime: e.target.value})}
                           />
                       </div>
                    </div>
@@ -235,18 +288,15 @@ export default function EventsPage() {
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">End Time</label>
                       <div className="relative">
                           <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                          <input 
-                            required 
-                            type="time" 
+                          <input required type="time" 
                             className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500"
-                            value={formData.endTime} 
-                            onChange={e => setFormData({...formData, endTime: e.target.value})}
+                            value={formData.endTime} onChange={e => setFormData({...formData, endTime: e.target.value})}
                           />
                       </div>
                    </div>
                 </div>
 
-                {/* Category & Location */}
+                {/* Category & Type */}
                 <div className="grid grid-cols-2 gap-4">
                    <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Category</label>
@@ -254,9 +304,7 @@ export default function EventsPage() {
                         className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500"
                         value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}
                       >
-                        <option>Networking</option>
-                        <option>Workshop</option>
-                        <option>Conference</option>
+                        {categories.slice(1).map(cat => <option key={cat} value={cat}>{cat}</option>)}
                       </select>
                    </div>
                    <div>
@@ -290,13 +338,87 @@ export default function EventsPage() {
         </div>
       )}
 
+      {/* --- EVENT DETAILS MODAL --- */}
+      {selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-200">
+           <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+              {/* Header */}
+              <div className="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-start">
+                 <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${selectedEvent.category === 'Workshop' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>
+                            {selectedEvent.category}
+                        </span>
+                        <span className="text-slate-400 text-xs font-medium flex items-center gap-1">
+                            <Tag size={12} /> {selectedEvent.type}
+                        </span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-900">{selectedEvent.title}</h2>
+                 </div>
+                 <button onClick={() => setSelectedEvent(null)} className="p-2 bg-white rounded-full border border-slate-200 hover:bg-slate-100 text-slate-500 transition">
+                    <X size={20} />
+                 </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 overflow-y-auto space-y-6">
+                 {/* Metadata Grid */}
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                       <p className="text-xs text-slate-500 uppercase font-bold mb-1">Date & Time</p>
+                       <div className="flex items-center gap-2 text-slate-800 font-medium text-sm">
+                          <Calendar size={16} className="text-indigo-500" />
+                          {selectedEvent.startDate} • {selectedEvent.time}
+                       </div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                       <p className="text-xs text-slate-500 uppercase font-bold mb-1">Location</p>
+                       <div className="flex items-center gap-2 text-slate-800 font-medium text-sm">
+                          {selectedEvent.type === 'Online' ? <Video size={16} className="text-indigo-500"/> : <MapPin size={16} className="text-indigo-500"/>}
+                          {selectedEvent.location}
+                       </div>
+                    </div>
+                 </div>
+
+                 {/* Description */}
+                 <div>
+                    <h3 className="text-sm font-bold text-slate-900 mb-2">About this Event</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">
+                        {selectedEvent.description || "No description provided."}
+                    </p>
+                 </div>
+
+                 {/* Attendees */}
+                 <div>
+                    <h3 className="text-sm font-bold text-slate-900 mb-3">Attendees ({selectedEvent.attendees})</h3>
+                    <div className="flex items-center gap-3">
+                        <AvatarStack avatars={selectedEvent.avatars} count={selectedEvent.attendees} />
+                        <button className="text-indigo-600 text-xs font-semibold hover:underline">View All</button>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t border-slate-100 flex justify-end gap-3 bg-white">
+                 <button onClick={() => setSelectedEvent(null)} className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition">
+                    Close
+                 </button>
+                 <button className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition flex items-center gap-2">
+                    {selectedEvent.isHostedByMe ? 'Edit Event' : 'Register Now'}
+                    <ArrowUpRight size={16} />
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
+
     </div>
   );
 }
 
 // --- SUB COMPONENTS (Unchanged) ---
 const HostEventCard = ({ onClick }) => (
-  <button onClick={onClick} className="group relative h-full min-h-[280px] w-full flex flex-col items-center justify-center gap-4 bg-white rounded-2xl border-2 border-dashed border-slate-300 hover:border-indigo-500 hover:bg-indigo-50/30 transition-all duration-300">
+  <button onClick={onClick} className="group relative h-full min-h-[280px] w-full flex flex-col items-center justify-center gap-4 bg-white rounded-2xl border-2 border-dashed border-slate-300 hover:border-indigo-500 hover:bg-indigo-50/30 transition-all duration-300 cursor-pointer">
      <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:bg-white group-hover:shadow-md transition-all duration-300">
         <Plus className="w-8 h-8 text-indigo-600" />
      </div>
@@ -304,7 +426,7 @@ const HostEventCard = ({ onClick }) => (
         <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">Host an Event</h3>
         <p className="text-sm text-slate-500 max-w-[200px] mx-auto mt-1">Create a new workshop, meetup, or webinar.</p>
      </div>
-  </button>
+ </button>
 );
 
 const TabLink = ({ active, onClick, label, count, isSpecial }) => (
@@ -315,8 +437,8 @@ const TabLink = ({ active, onClick, label, count, isSpecial }) => (
   </button>
 );
 
-const EventCard = ({ event }) => (
-  <div className="group relative bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+const EventCard = ({ event, onClick }) => (
+  <div onClick={onClick} className="group relative bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full cursor-pointer">
     <div className="flex justify-between items-start mb-5">
       <div className="flex gap-4">
         <div className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl border transition-colors duration-300 shadow-sm ${event.isHostedByMe ? 'bg-purple-50 border-purple-100 text-purple-600' : 'bg-indigo-50 border-indigo-100 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white'}`}>
@@ -342,17 +464,17 @@ const EventCard = ({ event }) => (
     <div className="h-px bg-slate-100 w-full mb-4" />
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2"><AvatarStack avatars={event.avatars} count={event.attendees} /><span className="text-xs text-slate-500 font-medium">{event.attendees} registered</span></div>
-      {event.status === 'upcoming' ? (<button className={`flex items-center gap-2 px-4 py-2 text-white text-xs font-semibold rounded-lg transition-all shadow-sm hover:shadow active:scale-95 ${event.isHostedByMe ? 'bg-purple-600 hover:bg-purple-700' : 'bg-slate-900 hover:bg-indigo-600'}`}>{event.isHostedByMe ? 'Manage Event' : 'Register Now'}<ArrowUpRight className="w-3.5 h-3.5" /></button>) : (<button className="px-4 py-2 bg-slate-50 text-slate-400 text-xs font-semibold rounded-lg cursor-not-allowed border border-slate-100">Event Ended</button>)}
+      {event.status === 'upcoming' ? (<button className={`flex items-center gap-2 px-4 py-2 text-white text-xs font-semibold rounded-lg transition-all shadow-sm hover:shadow active:scale-95 ${event.isHostedByMe ? 'bg-purple-600 hover:bg-purple-700' : 'bg-slate-900 hover:bg-indigo-600'}`}>{event.isHostedByMe ? 'Manage' : 'View Details'}<ArrowUpRight className="w-3.5 h-3.5" /></button>) : (<button className="px-4 py-2 bg-slate-50 text-slate-400 text-xs font-semibold rounded-lg cursor-not-allowed border border-slate-100">Event Ended</button>)}
     </div>
   </div>
 );
 
-const EmptyState = ({ type }) => (
+const EmptyState = ({ type, onClear }) => (
   <div className="py-24 bg-white rounded-2xl border border-slate-200 border-dashed text-center flex flex-col items-center justify-center">
     <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 ring-8 ring-slate-50/50"><Calendar className="w-8 h-8 text-slate-300" /></div>
     <h3 className="text-slate-900 font-semibold mb-1">No events found</h3>
     <p className="text-slate-500 text-sm max-w-xs mx-auto mb-6">We couldn't find any events matching your criteria.</p>
-    <button className="text-indigo-600 text-sm font-semibold hover:text-indigo-700 hover:underline">Clear all filters</button>
+    <button onClick={onClear} className="text-indigo-600 text-sm font-semibold hover:text-indigo-700 hover:underline">Clear all filters</button>
   </div>
 );
 

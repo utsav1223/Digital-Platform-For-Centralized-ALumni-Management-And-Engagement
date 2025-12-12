@@ -9,6 +9,8 @@ const FlagIcon = () => (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24"
 const CheckIcon = () => (<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>);
 const XIcon = () => (<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>);
 const LogoutIcon = () => (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>);
+// --- New Icon for Events ---
+const CalendarIcon = () => (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>);
 
 export default function Sidebar({ view, setView, typeFilter, setTypeFilter, selectAllVisible, clearSelection }) {
   
@@ -95,6 +97,14 @@ export default function Sidebar({ view, setView, typeFilter, setTypeFilter, sele
           active={view === 'requests' && typeFilter === 'job'} 
           onClick={() => { setView('requests'); setTypeFilter('job'); }}
           colorClass="text-violet-600"
+        />
+        {/* --- ADDED: Events Filter --- */}
+        <NavItem 
+          label="Events" 
+          icon={CalendarIcon} 
+          active={view === 'requests' && typeFilter === 'event'} 
+          onClick={() => { setView('requests'); setTypeFilter('event'); }}
+          colorClass="text-blue-600"
         />
 
         <div className="pt-4 px-2 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">

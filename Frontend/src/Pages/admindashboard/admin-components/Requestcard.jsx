@@ -1,15 +1,23 @@
 import React from 'react';
 
-// --- Icons (Inline for portability) ---
+// --- Icons ---
 const BuildingIcon = () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>;
 const CalendarIcon = () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>;
 const CheckIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>;
 const XIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>;
+const UserIcon = () => <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
 
 export default function RequestCard({ r, selectedIds, toggleSelect, handleSingleAction, setActiveItem }) {
   
   const theme = getThemeColors(r.type);
   const isSelected = selectedIds.has(r.id);
+
+  // Dynamic label based on request type
+  const getSubLabel = () => {
+    if (r.type === 'event') return 'Venue / Organizer';
+    if (r.type === 'mentorship') return 'Institute / Org';
+    return 'Company';
+  };
 
   return (
     <article 
@@ -33,7 +41,7 @@ export default function RequestCard({ r, selectedIds, toggleSelect, handleSingle
             {r.type}
           </span>
           
-          {/* Checkbox (Custom Style) */}
+          {/* Checkbox */}
           <div className="relative flex items-center">
              <input 
               type="checkbox" 
@@ -61,6 +69,7 @@ export default function RequestCard({ r, selectedIds, toggleSelect, handleSingle
               {r.title}
             </h3>
             <div className="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
+              <UserIcon />
               <span className="font-medium text-slate-600">{r.name}</span>
             </div>
           </div>
@@ -71,7 +80,7 @@ export default function RequestCard({ r, selectedIds, toggleSelect, handleSingle
       <div className="px-5 flex-grow flex flex-col gap-3">
         {/* Metadata Row */}
         <div className="flex flex-wrap gap-y-2 gap-x-4 text-xs text-slate-500 border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-1.5" title="Company/Institute">
+          <div className="flex items-center gap-1.5" title={getSubLabel()}>
             <BuildingIcon />
             <span className="truncate max-w-[120px] font-medium">{r.company || '—'}</span>
           </div>
@@ -121,10 +130,10 @@ export default function RequestCard({ r, selectedIds, toggleSelect, handleSingle
   )
 }
 
-// --- Visual Helpers (Light Theme Only) ---
+// --- Visual Helpers (Professional / Corporate Theme) ---
 
 function getThemeColors(type) {
-  switch (type) {
+  switch (type.toLowerCase()) {
     case 'mentorship':
       return {
         bar: 'bg-emerald-500',
@@ -139,6 +148,11 @@ function getThemeColors(type) {
       return {
         bar: 'bg-violet-500',
         badge: 'bg-violet-50 text-violet-700 ring-1 ring-violet-100',
+      };
+    case 'event': // Added Event Theme (Blue)
+      return {
+        bar: 'bg-blue-500',
+        badge: 'bg-blue-50 text-blue-700 ring-1 ring-blue-100',
       };
     default:
       return {

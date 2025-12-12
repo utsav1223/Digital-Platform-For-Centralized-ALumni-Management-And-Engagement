@@ -9,6 +9,7 @@ import Adminlogin from './Pages/admindashboard/Admin-login/adminLogin.jsx';
 import Register from './Pages/Register/Register.jsx';
 import ProtectedRoute from './Pages/admindashboard/admin-components/ProtectedRoute.jsx';
 import AlumniDashboard from './Pages/alumnidashboard/start.jsx';
+import StudentDashboard from './Pages/studentdashboard/StudentDashboard.jsx';
 function App() {
   return (
     <Router>
@@ -48,6 +49,8 @@ function App() {
 
         {/* Optional: catch-all for unknown routes */}
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/alumnidashboard" element={<AlumniDashboard/>}/>
+        <Route path="/studentdashboard" element={<StudentDashboard/>}/>
       </Routes>
     </Router>
   );

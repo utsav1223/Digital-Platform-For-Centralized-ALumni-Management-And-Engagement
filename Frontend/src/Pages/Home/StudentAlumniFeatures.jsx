@@ -1,26 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// Helper for conditional class names
+const classNames = (...classes) => classes.filter(Boolean).join(" ");
 
 export default function StudentAlumniFeatures() {
   const [activeTab, setActiveTab] = useState("students");
   const [openFeature, setOpenFeature] = useState(null);
-  const [animState, setAnimState] = useState("closed");
+  const [isAnimating, setIsAnimating] = useState(false);
 
+  // Data preserved from your original code
   const studentFeatures = [
     {
       id: "find-alumni",
       title: "Find Alumni Easily",
       desc: "Search and connect with alumni from various batches, branches and industries worldwide.",
-      img: "https://plus.unsplash.com/premium_photo-1682974406959-7f7202c932b0?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      img: "https://plus.unsplash.com/premium_photo-1682974406959-7f7202c932b0?q=80&w=1470&auto=format&fit=crop",
       emoji: "🎓",
       extras: {
-        benefits: [
-          "Filter by batch, department, location and company",
-          "Saved searches & email alerts",
-        ],
-        steps: [
-          "Open directory → Apply filters",
-          "Visit profile → Connect or Message",
-        ],
+        benefits: ["Filter by batch & location", "Saved searches & alerts"],
+        steps: ["Open directory", "Apply filters", "Connect"],
         contact: "alumni-directory@alumniconnect.com",
       },
     },
@@ -28,26 +26,23 @@ export default function StudentAlumniFeatures() {
       id: "request-mentorship",
       title: "Request Mentorship",
       desc: "Get expert career guidance, interview prep, and real-world insights directly from alumni.",
-      img: "https://images.unsplash.com/photo-1513258496099-48168024aec0?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      img: "https://images.unsplash.com/photo-1513258496099-48168024aec0?q=80&w=1470&auto=format&fit=crop",
       emoji: "🤝",
       extras: {
-        benefits: [
-          "1-on-1 guidance from industry experts",
-          "Scheduled mentorship sessions",
-        ],
-        steps: ["Find mentor → Request session", "Attend call → Get feedback"],
+        benefits: ["1-on-1 guidance", "Scheduled sessions"],
+        steps: ["Find mentor", "Request session", "Get feedback"],
         contact: "mentorship@alumniconnect.com",
       },
     },
     {
       id: "jobs-internships",
-      title: "Explore Jobs & Internships",
+      title: "Jobs & Internships",
       desc: "Access exclusive roles shared by alumni working in top organizations.",
       img: "https://media.istockphoto.com/id/673873568/photo/software-engineers-working-on-project-and-programming-in-company.jpg?s=612x612&w=0&k=20&c=gcBkyI_4UEQ4IIyekgegOzJ66BamWMpcnwH3c7plzcc=",
       emoji: "💼",
       extras: {
-        benefits: ["Verified alumni referrals", "Quick apply, saved jobs"],
-        steps: ["Browse → Apply → Track status"],
+        benefits: ["Verified referrals", "Quick apply"],
+        steps: ["Browse", "Apply", "Track status"],
         contact: "jobs@alumniconnect.com",
       },
     },
@@ -58,11 +53,11 @@ export default function StudentAlumniFeatures() {
       id: "mentor-students",
       title: "Mentor Students",
       desc: "Guide students with career insights and interview preparation.",
-      img: "https://plus.unsplash.com/premium_photo-1663126346116-f0ccaf232268?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      img: "https://plus.unsplash.com/premium_photo-1663126346116-f0ccaf232268?q=80&w=1470&auto=format&fit=crop",
       emoji: "🧑‍🏫",
       extras: {
         benefits: ["Support student growth", "Set office hours"],
-        steps: ["Create availability → Accept mentees → Mentor"],
+        steps: ["Set availability", "Accept mentees", "Mentor"],
         contact: "mentor@alumniconnect.com",
       },
     },
@@ -73,20 +68,20 @@ export default function StudentAlumniFeatures() {
       img: "https://images.unsplash.com/photo-1552581234-26160f608093?q=80&w=1600&auto=format&fit=crop",
       emoji: "📢",
       extras: {
-        benefits: ["Boost student placements", "Fast referral tracking"],
-        steps: ["Post job → Add instructions → Track applicants"],
+        benefits: ["Boost placements", "Referral tracking"],
+        steps: ["Post job", "Add instructions", "Track"],
         contact: "referrals@alumniconnect.com",
       },
     },
     {
       id: "post-updates",
-      title: "Post Alumni Updates",
+      title: "Post Updates",
       desc: "Share achievements and success stories with your college network.",
-      img: "https://images.unsplash.com/photo-1758691736548-073bc97cdff4?q=80&w=1632&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      img: "https://images.unsplash.com/photo-1758691736548-073bc97cdff4?q=80&w=1632&auto=format&fit=crop",
       emoji: "📰",
       extras: {
-        benefits: ["Inspire students", "Build alumni community presence"],
-        steps: ["Write → Attach media → Publish"],
+        benefits: ["Inspire students", "Build presence"],
+        steps: ["Write", "Attach media", "Publish"],
         contact: "community@alumniconnect.com",
       },
     },
@@ -94,144 +89,216 @@ export default function StudentAlumniFeatures() {
 
   const data = activeTab === "students" ? studentFeatures : alumniFeatures;
 
-  const openModal = (feature) => {
+  // Handle Modal Open
+  const handleOpen = (feature) => {
     setOpenFeature(feature);
-    setAnimState("opening");
-    requestAnimationFrame(() => setAnimState("open"));
+    setTimeout(() => setIsAnimating(true), 10);
+    document.body.style.overflow = "hidden"; // Prevent background scrolling
   };
 
-  const closeModal = () => {
-    setAnimState("closing");
+  // Handle Modal Close
+  const handleClose = () => {
+    setIsAnimating(false);
     setTimeout(() => {
       setOpenFeature(null);
-      setAnimState("closed");
-    }, 250);
+      document.body.style.overflow = "unset";
+    }, 300);
   };
 
-  return (
-    <section id="features" className="w-full py-20 bg-[#F8FAFC]">
-      {/* Title */}
-      <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-12">
-        Platform <span className="text-blue-600">Features</span>
-      </h2>
+  // Close on Escape Key
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") handleClose();
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
 
-      {/* Tabs */}
-      <div className="flex justify-center mb-12">
-        <div className="bg-gray-200 p-2 rounded-full flex gap-2 shadow-sm">
-          <button
-            onClick={() => setActiveTab("students")}
-            className={`px-6 py-2 rounded-full font-semibold transition 
-            ${activeTab === "students" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-300"}`}
-          >
-            🎓 Students
-          </button>
-          <button
-            onClick={() => setActiveTab("alumni")}
-            className={`px-6 py-2 rounded-full font-semibold transition 
-            ${activeTab === "alumni" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-300"}`}
-          >
-            💼 Alumni
-          </button>
+  return (
+    <section className="w-full py-24 bg-slate-50 relative overflow-hidden">
+      {/* Background Decorative Elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-50"></div>
+        <div className="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-50"></div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <span className="inline-block py-1 px-3 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold tracking-wide uppercase mb-4 border border-indigo-100">
+            Platform Features
+          </span>
+          <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
+            Powerful tools for <span className="text-indigo-600">Growth</span>
+          </h2>
+          <p className="text-lg text-slate-600 leading-relaxed">
+            Whether you are a student looking for guidance or an alumni looking to give back, we have built the perfect ecosystem for you.
+          </p>
+        </div>
+
+        {/* Professional Segmented Control Tabs */}
+        <div className="flex justify-center mb-16">
+          <div className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm inline-flex">
+            {["students", "alumni"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={classNames(
+                  "px-8 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ease-out",
+                  activeTab === tab
+                    ? "bg-slate-900 text-white shadow-md transform scale-[1.02]"
+                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                )}
+              >
+                {tab === "students" ? "🎓 For Students" : "💼 For Alumni"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Feature Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {data.map((item) => (
+            <div
+              key={item.id}
+              onClick={() => handleOpen(item)}
+              className="group bg-white rounded-2xl border border-slate-200 overflow-hidden cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 hover:-translate-y-1"
+            >
+              {/* Card Image Area */}
+              <div className="relative h-52 overflow-hidden">
+                <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/0 transition-colors z-10" />
+                <img
+                  src={item.img}
+                  alt={item.title}
+                  className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-in-out"
+                />
+                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-lg shadow-sm z-20">
+                  <span className="text-xl">{item.emoji}</span>
+                </div>
+              </div>
+
+              {/* Card Content */}
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                  {item.title}
+                </h3>
+                <p className="text-slate-600 mt-3 text-sm leading-relaxed line-clamp-2">
+                  {item.desc}
+                </p>
+                
+                <div className="mt-6 flex items-center text-indigo-600 font-semibold text-sm">
+                  <span>Explore Feature</span>
+                  <svg className="w-4 h-4 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Cards */}
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-        {data.map((item) => (
+      {/* Modern Modal Overlay */}
+      {openFeature && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+        >
+          {/* Backdrop */}
           <div
-            key={item.id}
-            onClick={() => openModal(item)}
-            className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all cursor-pointer overflow-hidden hover:-translate-y-2"
+            className={classNames(
+              "absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300",
+              isAnimating ? "opacity-100" : "opacity-0"
+            )}
+            onClick={handleClose}
+          />
+
+          {/* Modal Panel */}
+          <div
+            className={classNames(
+              "relative bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row transform transition-all duration-300 ease-out",
+              isAnimating ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"
+            )}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative h-56">
+            {/* Modal Image (Left Side) */}
+            <div className="w-full md:w-2/5 h-48 md:h-auto relative">
               <img
-                src={item.img}
-                alt={item.title}
-                className="w-full h-full object-cover hover:scale-105 transition duration-500"
+                src={openFeature.img}
+                alt={openFeature.title}
+                className="w-full h-full object-cover"
               />
-              <div className="absolute left-5 bottom-5 bg-white/90 text-3xl w-14 h-14 flex items-center justify-center rounded-xl shadow">
-                {item.emoji}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent md:bg-gradient-to-r" />
+              <div className="absolute bottom-4 left-4 text-white md:hidden">
+                <span className="text-4xl">{openFeature.emoji}</span>
               </div>
             </div>
 
-            <div className="p-6">
-              <h3 className="text-xl font-semibold text-gray-900">{item.title}</h3>
-              <p className="text-gray-600 mt-3">{item.desc}</p>
-              <button className="mt-5 px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition">
-                View Details
+            {/* Modal Content (Right Side) */}
+            <div className="w-full md:w-3/5 p-8 md:p-10 flex flex-col h-full bg-white">
+              {/* Close Button */}
+              <button
+                onClick={handleClose}
+                className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-            </div>
-          </div>
-        ))}
-      </div>
 
-      {/* Modal */}
-      {openFeature && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-
-          <div
-            className={`
-              relative bg-white max-w-3xl w-full rounded-2xl shadow-2xl overflow-hidden
-              transform transition-all duration-300
-              ${animState === "opening" ? "opacity-0 scale-95" : ""}
-              ${animState === "open" ? "opacity-100 scale-100" : ""}
-              ${animState === "closing" ? "opacity-0 scale-95" : ""}
-            `}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Image */}
-            <div className="h-56 w-full">
-              <img
-                src={openFeature.img}
-                className="w-full h-full object-cover"
-                alt=""
-              />
-            </div>
-
-            {/* Content */}
-            <div className="p-6">
-              <h3 className="text-3xl font-bold text-gray-900">
+              <div className="mb-6 hidden md:block text-4xl">{openFeature.emoji}</div>
+              
+              <h3 className="text-3xl font-bold text-slate-900 mb-2">
                 {openFeature.title}
               </h3>
-              <p className="mt-2 text-gray-600">{openFeature.desc}</p>
+              <p className="text-slate-600 leading-relaxed mb-8">
+                {openFeature.desc}
+              </p>
 
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-8 flex-grow">
                 <div>
-                  <h4 className="font-semibold text-gray-900 text-lg">Benefits</h4>
-                  <ul className="mt-2 text-gray-600 list-disc list-inside space-y-1">
+                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b pb-2">
+                    Key Benefits
+                  </h4>
+                  <ul className="space-y-3">
                     {openFeature.extras.benefits.map((b, i) => (
-                      <li key={i}>{b}</li>
+                      <li key={i} className="flex items-start text-slate-600 text-sm">
+                        <svg className="w-5 h-5 text-green-500 mr-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {b}
+                      </li>
                     ))}
                   </ul>
                 </div>
-
                 <div>
-                  <h4 className="font-semibold text-gray-900 text-lg">Steps</h4>
-                  <ol className="mt-2 text-gray-600 list-decimal list-inside space-y-1">
+                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b pb-2">
+                    How it works
+                  </h4>
+                  <ul className="space-y-3">
                     {openFeature.extras.steps.map((s, i) => (
-                      <li key={i}>{s}</li>
+                      <li key={i} className="flex items-start text-slate-600 text-sm">
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold mr-2 shrink-0">
+                          {i + 1}
+                        </span>
+                        {s}
+                      </li>
                     ))}
-                  </ol>
+                  </ul>
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-between items-center">
-                <p className="text-gray-600 text-sm">
-                  <strong>Contact:</strong>{" "}
-                  <a
-                    href={`mailto:${openFeature.extras.contact}`}
-                    className="text-blue-600"
-                  >
-                    {openFeature.extras.contact}
-                  </a>
-                </p>
-
+              {/* Footer Action */}
+              <div className="pt-6 mt-auto border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-slate-500">
+                  Questions? <a href={`mailto:${openFeature.extras.contact}`} className="text-indigo-600 font-medium hover:underline">Contact Support</a>
+                </div>
                 <button
-                  onClick={closeModal}
-                  className="px-6 py-3 bg-gray-900 text-white rounded-lg shadow hover:shadow-xl transition"
+                   onClick={handleClose}
+                   className="w-full sm:w-auto px-6 py-2.5 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition shadow-lg hover:shadow-xl"
                 >
-                  Close
+                  Got it
                 </button>
               </div>
             </div>

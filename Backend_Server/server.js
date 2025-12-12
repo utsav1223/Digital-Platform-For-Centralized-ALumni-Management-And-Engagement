@@ -1,41 +1,51 @@
 import express from "express";
 import cors from "cors";
+import session from "express-session";
 import connectDB from "./config/db.js";
 import alumniRoutes from "./routes/alumniRoutes.js";
-import studentAuthRoutes from "./routes/studentAuthRoutes.js";
 
 const app = express();
-const PORT = 8000;
 
-// Middlewares
-app.use(cors());
+// -------------------
+// MIDDLEWARE
+// -------------------
 app.use(express.json());
 
-// Connect DB
-connectDB();
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 
-// Debug logger (optional but helpful)
-app.use((req, res, next) => {
-  console.log(`Incoming Request: ${req.method} ${req.url}`);
-  next();
-});
+// -------------------
+// SESSION CONFIG
+// -------------------
+app.use(
+  session({
+    secret: "MY_SECRET_KEY_12345",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: false, // set true only when using HTTPS
+      sameSite: "lax",
+    },
+  })
+);
 
-// Routes
+// -------------------
+// CONNECT DATABASE
+// -------------------
+connectDB(); // from db.js :contentReference[oaicite:0]{index=0}
+
+// -------------------
+// ROUTES
+// -------------------
 app.use("/api/alumni", alumniRoutes);
-app.use("/api/student", studentAuthRoutes);
+app.use("/uploads", express.static("uploads"));
 
-// 404 Fallback
-app.use((req, res) => {
-  res.status(404).json({ message: "Route not found" });
-});
-
-// Global Error Handler (optional)
-app.use((err, req, res, next) => {
-  console.error("SERVER ERROR:", err);
-  res.status(500).json({ message: "Internal server error" });
-});
-
-// Start Server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// -------------------
+app.listen(8000, () => {
+  console.log("🚀 Server running on http://localhost:8000");
 });

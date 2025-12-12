@@ -26,7 +26,7 @@ export default function AlumniDashboard() {
   const renderContent = () => {
     switch (activeTab) {
       case 'jobs': return <Jobs />;
-      case 'dashboard': return <Dashboard />;
+      case 'dashboard': return <Dashboard setActiveTab={setActiveTab} />;
       case 'directory': return <Placeholder title="Alumni Directory" />;
       
       // ✅ CHANGE MADE HERE: Connected the actual Component instead of Placeholder

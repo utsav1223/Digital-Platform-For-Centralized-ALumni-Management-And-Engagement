@@ -3,7 +3,7 @@ import cors from "cors";
 import session from "express-session";
 import connectDB from "./config/db.js";
 import alumniRoutes from "./routes/alumniRoutes.js";
-
+import jobRoutes from "./routes/jobRoutes.js";
 const app = express();
 
 // -------------------
@@ -44,7 +44,7 @@ connectDB(); // from db.js :contentReference[oaicite:0]{index=0}
 // -------------------
 app.use("/api/alumni", alumniRoutes);
 app.use("/uploads", express.static("uploads"));
-
+app.use("/api/jobs", jobRoutes);
 // -------------------
 app.listen(8000, () => {
   console.log("🚀 Server running on http://localhost:8000");

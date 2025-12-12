@@ -28,12 +28,23 @@ export const upload = multer({ storage });
 --------------------------------*/
 export const registerAlumni = async (req, res) => {
   try {
-    const { fullName, email, regNo, password, department, batchYear, company } =
-      req.body;
+    const { fullName, email, regNo, password, department, batchYear, company } = req.body;
 
-    const exists = await Alumni.findOne({ email });
-    if (exists)
-      return res.status(400).json({ message: "Email already exists" });
+    // Manual email check
+    const emailExists = await Alumni.findOne({ email });
+    if (emailExists) {
+      return res.status(400).json({
+        errors: [{ msg: "Email already exists", path: "email" }]
+      });
+    }
+
+    // Manual regNo check
+    const regNoExists = await Alumni.findOne({ regNo });
+    if (regNoExists) {
+      return res.status(400).json({
+        errors: [{ msg: "Registration Number already exists", path: "regNo" }]
+      });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -49,15 +60,28 @@ export const registerAlumni = async (req, res) => {
 
     await newAlumni.save();
 
-    // Save session
     req.session.alumniId = newAlumni._id;
 
     res.json({ message: "Registration successful", alumni: newAlumni });
+
   } catch (error) {
     console.log("Register Error:", error);
+
+    // Handle MongoDB unique constraint errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return res.status(400).json({
+        errors: [{ msg: `${field} already exists`, path: field }]
+      });
+    }
+
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+
+
 
 /* ------------------------------
    LOGIN

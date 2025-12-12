@@ -17,8 +17,9 @@ const achievementSchema = new mongoose.Schema({
 const alumniSchema = new mongoose.Schema(
   {
     fullName: { type: String, required: true },
-    email: { type: String, required: true },
-    regNo: { type: String, required: true },
+    /* Email and reg no unique applied here*/
+    email: { type: String, required: true, unique: true },
+    regNo: { type: String, required: true, unique: true },
     password: { type: String, required: true },
 
     department: { type: String, default: "" },

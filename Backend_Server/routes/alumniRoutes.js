@@ -9,11 +9,12 @@ import {
   upload,
   generateResume
 } from "../controllers/alumniControllers.js";
-
+import {validate} from "../middleware/validate.js";
+import {registerValidator, loginValidator} from "../middleware/validator.js";
 const router = express.Router();
 
-router.post("/register", registerAlumni);
-router.post("/login", loginAlumni);
+router.post("/register", registerValidator, validate, registerAlumni);
+router.post("/login", loginValidator, validate, loginAlumni);
 router.post("/logout", logoutAlumni);
 router.get("/me", getLoggedInAlumni);
 router.get("/profile", getProfile);

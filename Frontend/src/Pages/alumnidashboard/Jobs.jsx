@@ -1,513 +1,580 @@
 import React, { useState } from 'react';
 import { 
-  Briefcase, MapPin, DollarSign, Users, 
-  Plus, CheckCircle2, X, ExternalLink, 
-  Search, ChevronDown, Building2, Trash2, 
-  AlertCircle, Mail, Phone, Calendar 
+  Briefcase, 
+  Search, 
+  Bookmark, 
+  MapPin, 
+  DollarSign, 
+  Clock,
+  ExternalLink,
+  Building2,
+  ChevronDown,
+  ArrowRight,
+  Plus,
+  X
 } from 'lucide-react';
 
-// --- MOCK APPLICANT DATA GENERATOR ---
-const generateApplicants = (count) => {
-  const names = ["Aditi Sharma", "Rahul Verma", "Priya Singh", "Amit Patel", "Sneha Gupta"];
-  return Array.from({ length: count }, (_, i) => ({
-    id: i,
-    name: names[i % names.length] || `Candidate ${i + 1}`,
-    email: `candidate${i}@example.com`,
-    phone: "+91 98765 43210",
-    appliedDate: "2 days ago",
-  }));
-};
-
-// --- MOCK DATA ---
-const MY_JOBS_MOCK = [
-  { 
-    id: 1, 
-    title: "Senior Software Engineer", 
-    type: "Full-time", 
-    workplaceType: "Hybrid", 
-    company: "Microsoft", 
-    location: "Bangalore", 
-    applicants: 5, 
-    applicantList: generateApplicants(5),
-    posted: "2d ago", 
-    status: "Approved", 
-    logo: "M", 
-    salary: "₹25L - ₹40L", 
-    exp: "3-5 Yrs", 
-    skills: ["React", "Node.js", "Azure", "System Design"], 
-    description: "We are looking for an experienced Senior Software Engineer to drive our core product architecture.", 
-    applyLink: "#" 
-  },
-  { 
-    id: 2, 
-    title: "Product Design Intern", 
-    type: "Internship", 
-    workplaceType: "Remote", 
-    company: "Google", 
-    location: "Remote", 
-    applicants: 12, 
-    applicantList: generateApplicants(12),
-    posted: "1w ago", 
-    status: "Pending", 
-    logo: "G", 
-    salary: "₹40k/mo", 
-    exp: "Fresher", 
-    skills: ["Figma", "Adobe XD", "Prototyping"], 
-    description: "Join our design team for a 6-month immersive internship.", 
-    applyLink: "#" 
-  },
-];
-
-export default function ProfessionalJobsBoard() {
-  // State
-  const [jobs, setJobs] = useState(MY_JOBS_MOCK);
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [expandedJobId, setExpandedJobId] = useState(null);
-  
-  // Modal States
-  const [showJobForm, setShowJobForm] = useState(false);
-  const [viewApplicantsJob, setViewApplicantsJob] = useState(null); 
-  const [jobSuccess, setJobSuccess] = useState(false);
-  
-  // Selection State
-  const [viewCategory, setViewCategory] = useState("Professional"); 
-
-  // Filter Logic
-  const filteredJobs = jobs.filter(job => {
-    const statusMatch = filterStatus === 'All' ? true : job.status === filterStatus;
-    const isStudent = ['Internship', 'Trainee', 'Co-op'].includes(job.type);
-    const categoryMatch = viewCategory === 'Student' ? isStudent : !isStudent;
-    return statusMatch && categoryMatch;
+const JobsBoard = () => {
+  const [savedJobs, setSavedJobs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedJobId, setSelectedJobId] = useState(1);
+  const [filters, setFilters] = useState({
+    type: '',
+    location: '',
+    experience: ''
+  });
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [formData, setFormData] = useState({ 
+    title: '', 
+    company: '',
+    location: 'Remote', 
+    type: 'Full-time',
+    salary: '',
+    experience: '',
+    description: '',
+    responsibilities: ['', '', ''],
+    requirements: ['', '', '']
   });
 
-  // --- ACTIONS ---
-
-  // 1. Submit Job Logic
-  const handleJobSubmit = (newJobData) => {
-    const newJob = {
-      id: Date.now(),
-      ...newJobData,
-      applicants: 0,
-      applicantList: [], 
-      posted: "Just now",
-      status: "Pending",
-      logo: newJobData.company.charAt(0).toUpperCase(),
-    };
-    
-    setTimeout(() => {
-      setJobs(prev => [newJob, ...prev]);
-      setJobSuccess(true);
-    }, 600);
-  };
-
-  // 2. Delete Job Logic
-  const handleDeleteJob = (e, jobId) => {
-    e.stopPropagation();
-    if(window.confirm("Are you sure you want to delete this job post?")) {
-        setJobs(prev => prev.filter(job => job.id !== jobId));
+  const [jobs, setJobs] = useState([
+    {
+      id: 1,
+      title: "Frontend Developer",
+      company: "TechCorp",
+      logoColor: "bg-blue-600",
+      location: "Remote",
+      type: "Full-time",
+      salary: "$80,000 - $100,000",
+      posted: "2 days ago",
+      applicants: 145,
+      experience: "3+ years",
+      skills: ["React", "TypeScript", "Redux", "GraphQL"],
+      description: "We're looking for an experienced Frontend Developer to join our team. You'll be responsible for building user interfaces and implementing new features.",
+      responsibilities: [
+        "Develop and maintain high-quality frontend code",
+        "Collaborate with designers and product managers",
+        "Optimize applications for maximum speed and scalability",
+        "Stay up-to-date with emerging technologies"
+      ],
+      requirements: [
+        "3+ years of experience with React",
+        "Strong proficiency in JavaScript and TypeScript",
+        "Experience with state management (Redux/MobX)",
+        "Familiarity with RESTful APIs and GraphQL"
+      ]
     }
+  ]);
+
+  const selectedJob = jobs.find(job => job.id === selectedJobId) || jobs[0];
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // 3. View Applicants Logic
-  const handleViewApplicants = (e, job) => {
-    e.stopPropagation(); 
-    setViewApplicantsJob(job);
+  const handleArrayChange = (field, index, value) => {
+    const newArray = [...formData[field]];
+    newArray[index] = value;
+    setFormData(prev => ({ ...prev, [field]: newArray }));
   };
 
-  const closeForm = () => {
-    setShowJobForm(false);
-    setJobSuccess(false);
+  const handleAddField = (field) => {
+    setFormData(prev => ({ ...prev, [field]: [...prev[field], ''] }));
   };
 
-  return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20">
-      {/* Top Navigation Bar */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 py-3 shadow-sm">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-blue-600" />
-              TalentConnect
-            </h1>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {/* View Toggle */}
-            <div className="flex bg-slate-100 p-1 rounded-lg">
-              <button 
-                onClick={() => setViewCategory("Professional")}
-                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${viewCategory === 'Professional' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                Jobs
-              </button>
-              <button 
-                onClick={() => setViewCategory("Student")}
-                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${viewCategory === 'Student' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                Internships
-              </button>
-            </div>
-
-            <button 
-              onClick={() => setShowJobForm(true)}
-              className="hidden md:flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-full transition-colors shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Post a Job
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          
-          {/* LEFT COLUMN: Sidebar Filters & Stats */}
-          <div className="hidden lg:block w-64 space-y-6">
-            <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-              <h3 className="font-semibold text-slate-900 mb-4">Dashboard</h3>
-              <div className="space-y-1">
-                {['All', 'Approved', 'Pending', 'Rejected'].map(status => (
-                  <button
-                    key={status}
-                    onClick={() => setFilterStatus(status)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex justify-between items-center ${filterStatus === status ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                  >
-                    {status}
-                    <span className="text-xs bg-slate-100 px-2 py-0.5 rounded-full text-slate-500">
-                      {status === 'All' ? jobs.length : jobs.filter(j => j.status === status).length}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* MIDDLE COLUMN: Feed */}
-          <div className="flex-1">
-             {/* Mobile Filters */}
-             <div className="lg:hidden flex overflow-x-auto pb-4 gap-2 mb-2 no-scrollbar">
-                {['All', 'Approved', 'Pending', 'Rejected'].map(status => (
-                  <button key={status} onClick={() => setFilterStatus(status)} className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap border ${filterStatus === status ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200'}`}>
-                    {status}
-                  </button>
-                ))}
-             </div>
-
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-slate-800">
-                {viewCategory === 'Professional' ? 'Latest Job Openings' : 'Internships & Student Programs'}
-              </h2>
-              <span className="text-sm text-slate-500">Showing {filteredJobs.length} results</span>
-            </div>
-
-            <div className="space-y-4">
-              {filteredJobs.length === 0 ? (
-                <div className="bg-white rounded-xl border border-dashed border-slate-300 p-12 text-center">
-                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Search className="w-8 h-8 text-slate-400" />
-                  </div>
-                  <h3 className="text-slate-900 font-medium">No jobs found</h3>
-                  <p className="text-slate-500 text-sm mt-1">Try changing your filters or post a new opportunity.</p>
-                </div>
-              ) : (
-                filteredJobs.map(job => (
-                  <JobCard 
-                    key={job.id} 
-                    job={job} 
-                    expanded={expandedJobId === job.id} 
-                    onToggle={() => setExpandedJobId(expandedJobId === job.id ? null : job.id)} 
-                    onDelete={handleDeleteJob}
-                    onViewApplicants={handleViewApplicants}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Floating Action Button (Mobile) */}
-      <button 
-        onClick={() => setShowJobForm(true)}
-        className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-600/30 flex items-center justify-center z-40 active:scale-95 transition-transform"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
-
-      {/* POST JOB MODAL */}
-      {showJobForm && (
-        <PostJobModal 
-          closeForm={closeForm} 
-          onSubmit={handleJobSubmit} 
-          success={jobSuccess}
-          initialCategory={viewCategory}
-        />
-      )}
-
-      {/* VIEW APPLICANTS MODAL */}
-      {viewApplicantsJob && (
-        <ApplicantsModal 
-          job={viewApplicantsJob}
-          onClose={() => setViewApplicantsJob(null)}
-        />
-      )}
-
-    </div>
-  );
-}
-
-// --- COMPONENTS ---
-
-const JobCard = ({ job, expanded, onToggle, onDelete, onViewApplicants }) => {
-  return (
-    <div className={`bg-white rounded-lg border transition-all duration-200 ${expanded ? 'border-blue-200 ring-1 ring-blue-100 shadow-md' : 'border-slate-200 hover:shadow-sm'}`}>
-      <div className="p-5 cursor-pointer" onClick={onToggle}>
-        <div className="flex gap-4">
-          {/* Logo */}
-          <div className="w-12 h-12 rounded bg-slate-100 flex items-center justify-center text-xl font-bold text-slate-600 shrink-0 border border-slate-200">
-            {job.logo}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-bold text-slate-900 text-lg leading-tight group-hover:text-blue-600">{job.title}</h3>
-                <p className="text-sm text-slate-600 mt-0.5">{job.company}</p>
-              </div>
-              <div className="flex gap-2 items-center">
-                <StatusBadge status={job.status} />
-                <button 
-                    onClick={(e) => onDelete(e, job.id)}
-                    className="p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors"
-                    title="Delete Job"
-                >
-                    <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs sm:text-sm text-slate-500">
-              <span className="flex items-center gap-1.5"><Building2 size={14} className="text-slate-400"/> {job.workplaceType || 'On-site'}</span>
-              <span className="flex items-center gap-1.5"><MapPin size={14} className="text-slate-400"/> {job.location}</span>
-              <span className="flex items-center gap-1.5"><DollarSign size={14} className="text-slate-400"/> {job.salary}</span>
-              {job.exp && <span className="flex items-center gap-1.5 text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Exp: {job.exp}</span>}
-              <span className="flex items-center gap-1.5 text-slate-400">• {job.posted}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="border-t border-slate-100 bg-slate-50/30 p-5 sm:p-6 animate-in slide-in-from-top-1">
-          <div className="prose prose-sm max-w-none text-slate-600 mb-6">
-            <h4 className="text-slate-900 font-semibold mb-2 text-sm uppercase tracking-wide">About the role</h4>
-            <p className="mb-4 whitespace-pre-wrap">{job.description}</p>
-            
-            <h4 className="text-slate-900 font-semibold mb-2 text-sm uppercase tracking-wide">Skills</h4>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {job.skills && job.skills.length > 0 ? job.skills.map((skill, i) => (
-                <span key={i} className="px-2.5 py-1 bg-white border border-slate-200 rounded text-xs font-medium text-slate-700">
-                  {skill}
-                </span>
-              )) : <span className="text-xs text-slate-400 italic">No specific skills listed</span>}
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 mt-6">
-              <a href={job.applyLink} target="_blank" rel="noreferrer" className="flex-1 inline-flex justify-center items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                Apply Now <ExternalLink size={14} />
-              </a>
-              
-              <button 
-                onClick={(e) => onViewApplicants(e, job)}
-                className="flex-1 inline-flex justify-center items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all"
-              >
-                <Users size={14} /> 
-                {job.applicants} Applicants
-                <span className="text-xs text-blue-600 font-normal">(View)</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// --- UPDATED APPLICANTS MODAL COMPONENT ---
-// Removed "New" status badge and "Document" icon as requested
-const ApplicantsModal = ({ job, onClose }) => {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6">
-      <div className="bg-white w-full max-w-3xl max-h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95">
-        
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
-          <div>
-            <h2 className="text-lg font-bold text-slate-800">Applicants</h2>
-            <p className="text-sm text-slate-500">For {job.title} at {job.company}</p>
-          </div>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-100 transition-colors">
-            <X className="w-5 h-5 text-slate-500" />
-          </button>
-        </div>
-
-        {/* List */}
-        <div className="flex-1 overflow-y-auto p-0">
-          {(!job.applicantList || job.applicantList.length === 0) ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <Users size={48} className="mb-4 opacity-20" />
-              <p>No applicants yet.</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {job.applicantList.map((applicant) => (
-                <div key={applicant.id} className="p-4 sm:px-6 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row gap-4 sm:items-center">
-                  
-                  {/* Avatar & Name */}
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
-                      {applicant.name.charAt(0)}
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900">{applicant.name}</h4>
-                      <p className="text-xs text-slate-500 flex items-center gap-1">
-                         <Calendar size={10} /> Applied {applicant.appliedDate}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Contact Info (Now takes remaining space nicely) */}
-                  <div className="flex flex-col gap-1 text-sm text-slate-600 sm:w-1/2 sm:text-right">
-                    <div className="flex items-center gap-2 sm:justify-end">
-                        <Mail size={12} className="text-slate-400"/> 
-                        <span className="truncate">{applicant.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2 sm:justify-end">
-                        <Phone size={12} className="text-slate-400"/> 
-                        <span>{applicant.phone}</span>
-                    </div>
-                  </div>
-
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50 text-right">
-             <button onClick={onClose} className="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-100">
-                Close
-             </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-
-// --- EXISTING POST JOB MODAL ---
-const PostJobModal = ({ closeForm, onSubmit, success, initialCategory }) => {
-  const [formData, setFormData] = useState({
-    title: "", company: "", workplaceType: "On-site", location: "",
-    type: initialCategory === "Student" ? "Internship" : "Full-time",
-    description: "", skills: [], salary: "", exp: "", applicationMethod: "Link", applyValue: ""
-  });
-  const [skillInput, setSkillInput] = useState("");
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && skillInput.trim()) {
-      e.preventDefault();
-      if (!formData.skills.includes(skillInput.trim())) setFormData(prev => ({ ...prev, skills: [...prev.skills, skillInput.trim()] }));
-      setSkillInput("");
-    }
+  const handleRemoveField = (field, index) => {
+    const newArray = formData[field].filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, [field]: newArray }));
   };
-  const removeSkill = (skill) => setFormData(prev => ({ ...prev, skills: prev.skills.filter(s => s !== skill) }));
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const finalSkills = [...formData.skills];
-    if (skillInput.trim() && !finalSkills.includes(skillInput.trim())) finalSkills.push(skillInput.trim());
-    onSubmit({ ...formData, skills: finalSkills });
+    const newJob = {
+      id: Date.now(),
+      title: formData.title,
+      company: formData.company,
+      logoColor: `hsl(${Math.floor(Math.random() * 360)}, 70%, 50%)`,
+      location: formData.location,
+      type: formData.type,
+      salary: formData.salary,
+      experience: formData.experience,
+      posted: "Just now",
+      applicants: 0,
+      skills: ["React", "JavaScript"],
+      description: formData.description,
+      responsibilities: formData.responsibilities.filter(r => r.trim() !== ''),
+      requirements: formData.requirements.filter(r => r.trim() !== '')
+    };
+    
+    setJobs(prev => [newJob, ...prev]);
+    setShowCreateModal(false);
+    setFormData({ 
+      title: '', 
+      company: '',
+      location: 'Remote', 
+      type: 'Full-time',
+      salary: '',
+      experience: '',
+      description: '',
+      responsibilities: ['', '', ''],
+      requirements: ['', '', '']
+    });
+    setSelectedJobId(newJob.id);
   };
 
-  if (success) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-sm w-full text-center animate-in zoom-in-95">
-          <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"><CheckCircle2 className="w-8 h-8" /></div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Job Posted!</h2>
-          <p className="text-slate-500 mb-6">Your opportunity is now live.</p>
-          <button onClick={closeForm} className="w-full py-2.5 bg-slate-900 text-white font-semibold rounded-lg hover:bg-slate-800">Back to Dashboard</button>
-        </div>
-      </div>
-    );
-  }
+  const toggleSaveJob = (jobId) => {
+    if (savedJobs.includes(jobId)) {
+      setSavedJobs(savedJobs.filter(id => id !== jobId));
+    } else {
+      setSavedJobs([...savedJobs, jobId]);
+    }
+  };
+
+  const filteredJobs = jobs.filter(job => {
+    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         job.company.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = !filters.type || job.type === filters.type;
+    const matchesLocation = !filters.location || job.location === filters.location;
+    return matchesSearch && matchesType && matchesLocation;
+  });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6">
-      <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
-          <h2 className="text-lg font-bold text-slate-800">Post a Job</h2>
-          <button onClick={closeForm} className="p-1 rounded-full hover:bg-slate-100 transition-colors"><X className="w-5 h-5 text-slate-500" /></button>
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Job Board</h1>
+            <p className="text-gray-600">Find your next career opportunity</p>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="mt-4 md:mt-0 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          >
+            <Plus size={20} />
+            Post Job
+          </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8">
-          <form id="jobForm" onSubmit={handleSubmit}>
-            <section className="space-y-5">
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">1</span> The Basics</h3>
-              <div className="space-y-4 pl-8 border-l-2 border-slate-100 ml-3">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <InputGroup label="Job Title" required><input className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none" placeholder="e.g. Senior Product Designer" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required /></InputGroup>
-                  <InputGroup label="Company" required><input className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none" placeholder="e.g. Acme Corp" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} required /></InputGroup>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Job Listings */}
+          <div className="lg:col-span-1 space-y-4">
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <InputGroup label="Workplace Type" required><div className="relative"><select className="w-full appearance-none px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none cursor-pointer" value={formData.workplaceType} onChange={e => setFormData({...formData, workplaceType: e.target.value})}><option value="On-site">On-site</option><option value="Hybrid">Hybrid</option><option value="Remote">Remote</option></select><ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" /></div></InputGroup>
-                  <InputGroup label="Job Location" required={formData.workplaceType !== 'Remote'}><input className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none" placeholder="City, Country" value={formData.location} disabled={formData.workplaceType === 'Remote'} onChange={e => setFormData({...formData, location: e.target.value})} /></InputGroup>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <InputGroup label="Employment Type" required><div className="relative"><select className="w-full appearance-none px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none cursor-pointer" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}><option value="Full-time">Full-time</option><option value="Part-time">Part-time</option><option value="Contract">Contract</option><option value="Internship">Internship</option><option value="Freelance">Freelance</option></select><ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" /></div></InputGroup>
-                  <InputGroup label="Experience Level"><input className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none" placeholder="e.g. 1-3 Years" value={formData.exp} onChange={e => setFormData({...formData, exp: e.target.value})} /></InputGroup>
-                </div>
-                <InputGroup label="Salary / Stipend"><input className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none" placeholder="e.g. ₹15L - ₹20L" value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} /></InputGroup>
+                <input
+                  type="text"
+                  placeholder="Search jobs..."
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-            </section>
-            <section className="space-y-5">
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">2</span> Details</h3>
-              <div className="space-y-4 pl-8 border-l-2 border-slate-100 ml-3">
-                <InputGroup label="Description" required><textarea className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none min-h-[120px]" placeholder="Describe the role..." value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} required></textarea></InputGroup>
-                <InputGroup label="Skills (Type and Press Enter)" required><div className="p-2 border border-slate-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-500"><div className="flex flex-wrap gap-2 mb-2">{formData.skills.map(skill => (<span key={skill} className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded border border-blue-100">{skill}<button type="button" onClick={() => removeSkill(skill)} className="hover:text-blue-900"><X size={12} /></button></span>))}</div><input className="w-full text-sm outline-none" placeholder={formData.skills.length > 0 ? "Add another skill..." : "e.g. React, Python"} value={skillInput} onChange={e => setSkillInput(e.target.value)} onKeyDown={handleKeyDown} /></div></InputGroup>
+
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Job Type</label>
+                  <select
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    value={filters.type}
+                    onChange={(e) => setFilters({...filters, type: e.target.value})}
+                  >
+                    <option value="">All Types</option>
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Internship">Internship</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <select
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    value={filters.location}
+                    onChange={(e) => setFilters({...filters, location: e.target.value})}
+                  >
+                    <option value="">All Locations</option>
+                    <option value="Remote">Remote</option>
+                    <option value="On-site">On-site</option>
+                    <option value="Hybrid">Hybrid</option>
+                  </select>
+                </div>
               </div>
-            </section>
-            <section className="space-y-5">
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">3</span> Application</h3>
-              <div className="space-y-4 pl-8 border-l-2 border-slate-100 ml-3">
-                 <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                    <label className="text-sm font-semibold text-slate-700 mb-3 block">How should people apply?</label>
-                    <div className="flex gap-4 mb-4">
-                      <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="appMethod" checked={formData.applicationMethod === 'Link'} onChange={() => setFormData({...formData, applicationMethod: 'Link'})} className="text-blue-600 focus:ring-blue-500" /><span className="text-sm text-slate-700">External Link</span></label>
-                      <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="appMethod" checked={formData.applicationMethod === 'Email'} onChange={() => setFormData({...formData, applicationMethod: 'Email'})} className="text-blue-600 focus:ring-blue-500" /><span className="text-sm text-slate-700">Email Address</span></label>
+            </div>
+
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <h3 className="text-sm font-medium text-gray-900">Job Listings</h3>
+              </div>
+              <div className="divide-y divide-gray-200">
+                {filteredJobs.map((job) => (
+                  <div
+                    key={job.id}
+                    className={`p-4 hover:bg-gray-50 cursor-pointer ${
+                      selectedJobId === job.id ? 'bg-indigo-50' : ''
+                    }`}
+                    onClick={() => setSelectedJobId(job.id)}
+                  >
+                    <div className="flex items-start">
+                      <div className={`flex-shrink-0 h-10 w-10 rounded-lg flex items-center justify-center text-white ${job.logoColor}`}>
+                        <Building2 className="h-5 w-5" />
+                      </div>
+                      <div className="ml-4 flex-1">
+                        <h4 className="text-sm font-medium text-gray-900">{job.title}</h4>
+                        <p className="text-sm text-gray-500">{job.company}</p>
+                        <div className="mt-1 flex items-center text-sm text-gray-500">
+                          <MapPin className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                          {job.location}
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSaveJob(job.id);
+                        }}
+                        className={`ml-2 p-1 rounded-full ${
+                          savedJobs.includes(job.id)
+                            ? 'text-yellow-500 hover:text-yellow-600'
+                            : 'text-gray-400 hover:text-gray-500'
+                        }`}
+                      >
+                        <Bookmark
+                          className={`h-5 w-5 ${
+                            savedJobs.includes(job.id) ? 'fill-current' : ''
+                          }`}
+                        />
+                      </button>
                     </div>
-                    <input className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none" placeholder={formData.applicationMethod === 'Link' ? "e.g. https://company.com/careers" : "e.g. jobs@company.com"} value={formData.applyValue} onChange={e => setFormData({...formData, applyValue: e.target.value})} type={formData.applicationMethod === 'Email' ? 'email' : 'text'} required />
                   </div>
+                ))}
               </div>
-            </section>
-          </form>
-        </div>
-        <div className="p-4 sm:px-8 sm:py-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-          <button type="button" onClick={closeForm} className="px-5 py-2.5 text-slate-600 font-semibold hover:bg-slate-200 rounded-lg transition-colors text-sm">Cancel</button>
-          <button form="jobForm" type="submit" className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 shadow-md transition-all active:scale-95 text-sm flex items-center gap-2">Post Opportunity</button>
+            </div>
+          </div>
+
+          {/* Job Details */}
+          <div className="lg:col-span-3">
+            {selectedJob && (
+              <div className="bg-white shadow overflow-hidden rounded-lg">
+                <div className="px-6 py-5 border-b border-gray-200">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">{selectedJob.title}</h2>
+                      <div className="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
+                        <div className="mt-2 flex items-center text-sm text-gray-500">
+                          <Building2 className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
+                          {selectedJob.company}
+                        </div>
+                        <div className="mt-2 flex items-center text-sm text-gray-500">
+                          <MapPin className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
+                          {selectedJob.location}
+                        </div>
+                        <div className="mt-2 flex items-center text-sm text-gray-500">
+                          <Clock className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
+                          {selectedJob.type}
+                        </div>
+                        {selectedJob.salary && (
+                          <div className="mt-2 flex items-center text-sm text-gray-500">
+                            <DollarSign className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
+                            {selectedJob.salary}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="ml-4 mt-2 flex-shrink-0 flex">
+                      <button
+                        type="button"
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        Apply Now
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleSaveJob(selectedJob.id)}
+                        className="ml-3 p-2 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        <Bookmark
+                          className={`h-5 w-5 ${
+                            savedJobs.includes(selectedJob.id) ? 'text-yellow-500 fill-current' : ''
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="px-6 py-6">
+                  <div className="prose max-w-none">
+                    <h3 className="text-lg font-medium text-gray-900">Job Description</h3>
+                    <p className="mt-2 text-gray-600">{selectedJob.description}</p>
+
+                    <h3 className="mt-6 text-lg font-medium text-gray-900">Responsibilities</h3>
+                    <ul className="mt-2 list-disc pl-5 space-y-1 text-gray-600">
+                      {selectedJob.responsibilities.map((item, index) => (
+                        <li key={index}>{item}</li>
+                      ))}
+                    </ul>
+
+                    <h3 className="mt-6 text-lg font-medium text-gray-900">Requirements</h3>
+                    <ul className="mt-2 list-disc pl-5 space-y-1 text-gray-600">
+                      {selectedJob.requirements.map((item, index) => (
+                        <li key={index}>{item}</li>
+                      ))}
+                    </ul>
+
+                    <div className="mt-8 pt-6 border-t border-gray-200">
+                      <div className="flex items-center">
+                        <div className={`flex-shrink-0 h-12 w-12 rounded-lg flex items-center justify-center text-white ${selectedJob.logoColor}`}>
+                          <Building2 className="h-6 w-6" />
+                        </div>
+                        <div className="ml-4">
+                          <h4 className="text-sm font-medium text-gray-900">{selectedJob.company}</h4>
+                          <div className="flex space-x-1">
+                            <a
+                              href="#"
+                              className="text-sm text-indigo-600 hover:text-indigo-500"
+                            >
+                              View company profile
+                            </a>
+                            <span className="text-gray-300">|</span>
+                            <a
+                              href="#"
+                              className="text-sm text-indigo-600 hover:text-indigo-500"
+                            >
+                              View all jobs
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-500">
+                      <span>Posted {selectedJob.posted}</span>
+                      <span className="mx-1">•</span>
+                      <span>{selectedJob.applicants} applicants</span>
+                    </div>
+                    <div className="flex space-x-3">
+                      <button
+                        type="button"
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        <span>Save</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        Apply Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Post Job Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Post a New Job</h2>
+                <p className="text-sm text-gray-500">Fill in the details below to post a new job</p>
+              </div>
+              <button 
+                onClick={() => setShowCreateModal(false)}
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
+                  <input
+                    type="text"
+                    name="title"
+                    required
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., Senior Frontend Developer"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
+                  <input
+                    type="text"
+                    name="company"
+                    required
+                    value={formData.company}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Company Name"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <select
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="Remote">Remote</option>
+                    <option value="On-site">On-site</option>
+                    <option value="Hybrid">Hybrid</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Job Type *</label>
+                  <select
+                    name="type"
+                    required
+                    value={formData.type}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Internship">Internship</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Salary Range</label>
+                  <input
+                    type="text"
+                    name="salary"
+                    value={formData.salary}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., $80,000 - $100,000"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Experience Level</label>
+                  <input
+                    type="text"
+                    name="experience"
+                    value={formData.experience}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., 3+ years"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Job Description *</label>
+                <textarea
+                  name="description"
+                  required
+                  rows={4}
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Detailed job description..."
+                />
+              </div>
+              
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Responsibilities</label>
+                  <button
+                    type="button"
+                    onClick={() => handleAddField('responsibilities')}
+                    className="text-sm text-indigo-600 hover:text-indigo-800"
+                  >
+                    + Add Responsibility
+                  </button>
+                </div>
+                {formData.responsibilities.map((resp, index) => (
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={resp}
+                      onChange={(e) => handleArrayChange('responsibilities', index, e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder={`Responsibility ${index + 1}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveField('responsibilities', index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Requirements</label>
+                  <button
+                    type="button"
+                    onClick={() => handleAddField('requirements')}
+                    className="text-sm text-indigo-600 hover:text-indigo-800"
+                  >
+                    + Add Requirement
+                  </button>
+                </div>
+                {formData.requirements.map((req, index) => (
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={req}
+                      onChange={(e) => handleArrayChange('requirements', index, e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder={`Requirement ${index + 1}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveField('requirements', index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Post Job
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-const InputGroup = ({ label, required, children }) => (
-  <div className="space-y-1.5"><label className="block text-sm font-semibold text-slate-700">{label} {required && <span className="text-red-500">*</span>}</label>{children}</div>
-);
-
-const StatusBadge = ({ status }) => {
-  const styles = { Approved: 'bg-emerald-100 text-emerald-700 border-emerald-200', Pending: 'bg-amber-100 text-amber-700 border-amber-200', Rejected: 'bg-red-50 text-red-600 border-red-100' };
-  return <span className={`px-2.5 py-0.5 rounded text-[11px] font-bold border uppercase tracking-wide ${styles[status] || styles.Pending}`}>{status}</span>;
-};
+export default JobsBoard;

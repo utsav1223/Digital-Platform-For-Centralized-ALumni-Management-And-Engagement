@@ -122,7 +122,8 @@ const Internships = () => {
   const getInitials = (name) => name.substring(0, 2).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#f3f2ef] font-sans">
+    <div className="min-h-screen bg-white font-sans">
+
       {/* Top Navigation Bar / Search Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 px-4 py-3 shadow-sm">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">

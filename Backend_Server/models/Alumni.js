@@ -54,7 +54,11 @@ const alumniSchema = new mongoose.Schema(
     isMentor: { type: Boolean, default: false },
     mentorshipTopics: { type: [String], default: [] },
     isOpenToReferrals: { type: Boolean, default: false },
-    referralIndustries: { type: String, default: "" }
+    referralIndustries: { type: String, default: "" },
+
+    // 🔐 FORGOT PASSWORD
+    resetOTP: { type: String },
+    resetOTPExpiry: { type: Date }
   },
   {
     timestamps: true,

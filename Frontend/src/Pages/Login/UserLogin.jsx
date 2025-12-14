@@ -1,5 +1,8 @@
+import { useNavigate } from "react-router-dom";
+
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../../context/authContext";
 
 // --- ICONS & LOGOS ---
 const StudentLogoIcon = () => (
@@ -85,6 +88,7 @@ export default function SlidingRoleLogin() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const isDesktop = useIsDesktop();
   const isStudent = role === "student";
+
 
   const swapTransition = {
     type: "spring",
@@ -238,6 +242,8 @@ function FormContent({ role, subtitle, setRole, isMobile, targetRole, onLoginSuc
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
+  const { setAuth } = useAuth();
+  const navigate = useNavigate();
 
   const getFieldError = (field) => {
     if (!errors || errors.length === 0) return "";
@@ -283,23 +289,49 @@ function FormContent({ role, subtitle, setRole, isMobile, targetRole, onLoginSuc
         setErrors([]);
         setErrorMessage("");
 
+        // ✅ UPDATE GLOBAL AUTH STATE (NAVBAR FIX)
+        // if (endpoint === "alumni") {
+        //   setAuth({
+        //     loading: false,
+        //     alumniLoggedIn: true,
+        //     alumni: data.alumni, // ✅ VERY IMPORTANT
+        //   });
+        // }
+
         if (endpoint === "alumni") {
-          localStorage.setItem("alumniToken", data.token);
-        } else if (endpoint === "student") {
-          localStorage.setItem("studentToken", data.token);
+          setAuth({
+            loading: false,
+            alumniLoggedIn: true,
+            alumni: data.alumni,
+            studentLoggedIn: false,
+            student: null,
+          });
         }
+
+        if (endpoint === "student") {
+          setAuth({
+            loading: false,
+            alumniLoggedIn: false,
+            alumni: null,
+            studentLoggedIn: true,
+            student: data.student, // 🔥 REQUIRED
+          });
+        }
+
+
 
         onLoginSuccess();
 
         setTimeout(() => {
           if (endpoint === "alumni") {
-            window.location.href = "/alumnidashboard";
+            navigate("/alumnidashboard");
           } else {
-            window.location.href = "/student/dashboard";
+            navigate("/studentdashboard");
           }
         }, 1800);
+      }
 
-      } else {
+      else {
         // --- ERROR HANDLING ---
         if (data && data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
           setErrors(data.errors);
@@ -355,7 +387,7 @@ function FormContent({ role, subtitle, setRole, isMobile, targetRole, onLoginSuc
               type="text"
               value={userRegNo}
               onChange={(e) => setUserRegNo(e.target.value)}
-              placeholder={role === 'Student' ? "Roll No (e.g., 21CS001)" : "Reg No (e.g., 12304017)"}
+              placeholder={role === 'Student' ? "Roll No (e.g., 12304017)" : "Reg No (e.g., 12304017)"}
               className={`${inputBaseClass} ${getFieldError("regNo") ? inputErrorClass : "border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"}`}
             />
             {/* Field Error (Added animate-pulse) */}
@@ -388,11 +420,33 @@ function FormContent({ role, subtitle, setRole, isMobile, targetRole, onLoginSuc
           </div>
         </div>
 
-        <div className="flex justify-end">
+        {/* <div className="flex justify-end">
           <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
             Forgot password?
           </a>
+        </div> */}
+
+        {/* <div className="flex justify-end">
+          {role === "Alumni" && (
+            <a
+              href="/alumni/forgot-password"
+              className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              Forgot password?
+            </a>
+          )}
+        </div> */}
+
+        {/* --- FORGOT PASSWORD LINK (Now dynamic for both) --- */}
+        <div className="flex justify-end">
+          <a
+            href={role === "Alumni" ? "/alumni/forgot-password" : "/student/forgot-password"}
+            className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            Forgot password?
+          </a>
         </div>
+
 
         <button
           type="submit"

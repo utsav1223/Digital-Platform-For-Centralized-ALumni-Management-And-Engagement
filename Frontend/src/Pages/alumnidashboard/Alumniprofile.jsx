@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from "react";
 import {
   MapPin, Mail, Phone, Linkedin, Github, Globe, Twitter,
-  Briefcase, GraduationCap, Award, BookOpen,
+  Briefcase, GraduationCap, Award,
   Download, Edit3, Camera, CheckCircle,
-  Plus, Trash2, Save, UploadCloud, Heart, User, ExternalLink
+  Plus, Trash2, Save, UploadCloud, Heart, User
 } from "lucide-react";
 
 import { getLoggedInAlumni, updateAlumniProfile } from "../../api/authAPI";
+import { useAuth } from "../../context/authContext"; // Assuming you have this, otherwise remove
 
 /* -------------------------------------------------------
    HELPERS
@@ -30,11 +31,11 @@ const makeId = () => Date.now().toString(36) + Math.random().toString(36).slice(
 const SectionTitle = ({ children, icon: Icon }) => (
   <div className="flex items-center gap-3 mb-6">
     {Icon && (
-      <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+      <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl shrink-0">
         <Icon size={20} strokeWidth={2.5} />
       </div>
     )}
-    <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+    <h3 className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">
       {children}
     </h3>
   </div>
@@ -51,7 +52,7 @@ const Input = ({ className = "", ...props }) => (
     className={`w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl 
       focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 
       outline-none transition-all duration-200 text-slate-700 font-medium 
-      placeholder:text-slate-400 ${className}`}
+      placeholder:text-slate-400 text-sm md:text-base ${className}`}
     {...props}
   />
 );
@@ -60,7 +61,7 @@ const TextArea = ({ className = "", ...props }) => (
   <textarea
     className={`w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl 
       focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 
-      outline-none transition-all duration-200 text-slate-700 font-medium resize-none ${className}`}
+      outline-none transition-all duration-200 text-slate-700 font-medium resize-none text-sm md:text-base ${className}`}
     {...props}
   />
 );
@@ -70,7 +71,7 @@ const Select = ({ children, ...props }) => (
     <select
       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl 
         focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 
-        outline-none transition-all duration-200 text-slate-700 appearance-none font-medium"
+        outline-none transition-all duration-200 text-slate-700 appearance-none font-medium text-sm md:text-base"
       {...props}
     >
       {children}
@@ -91,7 +92,7 @@ const Badge = ({ children, variant = "default" }) => {
     green: "bg-emerald-50 text-emerald-700 border-emerald-100",
   };
   return (
-    <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors cursor-default ${styles[variant]}`}>
+    <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors cursor-default whitespace-nowrap ${styles[variant]}`}>
       {children}
     </span>
   );
@@ -233,7 +234,7 @@ const AlumniProfile = () => {
       {/* --- HERO SECTION --- */}
       <div className="relative bg-white border-b border-slate-200 pb-8">
         {/* Cover Image */}
-        <div className="h-64 md:h-80 w-full bg-slate-200 relative group overflow-hidden">
+        <div className="h-48 md:h-64 lg:h-80 w-full bg-slate-200 relative group overflow-hidden">
           <img
             src={profile.coverImage || "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=1200&q=80"}
             alt="Cover"
@@ -241,45 +242,39 @@ const AlumniProfile = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
 
-          {/* FIXED: Added z-20 to ensure it's clickable above the gradient */}
           {isEditing && (
-            <label className="absolute bottom-6 right-6 cursor-pointer z-20 animate-in fade-in zoom-in duration-300">
-              <div className="bg-black/40 backdrop-blur-md text-white px-4 py-2 rounded-lg flex items-center gap-2 border border-white/20 hover:bg-black/60 transition-colors">
-                <Camera size={18} /> <span className="font-medium text-sm">Change Cover</span>
+            <label className="absolute bottom-4 right-4 md:bottom-6 md:right-6 cursor-pointer z-20 animate-in fade-in zoom-in duration-300">
+              <div className="bg-black/40 backdrop-blur-md text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg flex items-center gap-2 border border-white/20 hover:bg-black/60 transition-colors">
+                <Camera size={16} className="md:w-[18px]" /> <span className="font-medium text-xs md:text-sm">Change Cover</span>
               </div>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => handleImageUpload(e, "coverImage")}
-              />
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "coverImage")} />
             </label>
           )}
 
           {/* Action Buttons (Edit/Save) */}
-          <div className="absolute top-6 right-6 z-20">
+          <div className="absolute top-4 right-4 md:top-6 md:right-6 z-20">
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
-                className="bg-white/90 backdrop-blur-sm text-slate-700 px-5 py-2.5 rounded-full font-bold shadow-lg hover:bg-white hover:scale-105 transition-all flex items-center gap-2 text-sm"
+                className="bg-white/90 backdrop-blur-sm text-slate-700 px-4 py-2 md:px-5 md:py-2.5 rounded-full font-bold shadow-lg hover:bg-white hover:scale-105 transition-all flex items-center gap-2 text-xs md:text-sm"
               >
-                <Edit3 size={16} /> Edit Profile
+                <Edit3 size={16} /> <span className="hidden xs:inline">Edit Profile</span>
               </button>
             ) : (
-              <div className="flex gap-3 animate-in fade-in slide-in-from-top-2">
+              <div className="flex gap-2 md:gap-3 animate-in fade-in slide-in-from-top-2">
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="bg-white/90 backdrop-blur-sm text-slate-700 px-5 py-2.5 rounded-full font-bold shadow hover:bg-white transition text-sm"
+                  className="bg-white/90 backdrop-blur-sm text-slate-700 px-4 py-2 rounded-full font-bold shadow hover:bg-white transition text-xs md:text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="bg-indigo-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 hover:scale-105 transition-all flex items-center gap-2 text-sm"
+                  className="bg-indigo-600 text-white px-4 py-2 md:px-6 md:py-2.5 rounded-full font-bold shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 hover:scale-105 transition-all flex items-center gap-2 text-xs md:text-sm"
                 >
-                  {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={18} />}
-                  Save Changes
+                  {isSaving ? <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={16} />}
+                  Save
                 </button>
               </div>
             )}
@@ -288,11 +283,11 @@ const AlumniProfile = () => {
 
         {/* Profile Info Container */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative -mt-20 flex flex-col md:flex-row items-end gap-6 md:gap-8 z-10">
+          <div className="relative -mt-16 md:-mt-20 flex flex-col md:flex-row items-end gap-6 md:gap-8 z-10">
 
             {/* Avatar */}
             <div className="relative group shrink-0 mx-auto md:mx-0">
-              <div className="w-40 h-40 md:w-48 md:h-48 rounded-full border-[6px] border-white shadow-2xl overflow-hidden bg-white">
+              <div className="w-32 h-32 md:w-48 md:h-48 rounded-full border-[4px] md:border-[6px] border-white shadow-2xl overflow-hidden bg-white">
                 <img
                   src={profile.profileImage || "https://via.placeholder.com/200"}
                   alt="Profile"
@@ -300,16 +295,10 @@ const AlumniProfile = () => {
                 />
               </div>
 
-              {/* FIXED: Added z-20 to ensure it's clickable */}
               {isEditing && (
                 <label className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-all duration-300 backdrop-blur-sm border-[6px] border-transparent">
                   <UploadCloud size={32} className="text-white drop-shadow-md" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleImageUpload(e, "profileImage")}
-                  />
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "profileImage")} />
                 </label>
               )}
             </div>
@@ -318,30 +307,40 @@ const AlumniProfile = () => {
             {!isEditing && (
               <div className="flex-1 pb-2 w-full text-center md:text-left space-y-2">
                 <div>
-                  <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">{profile.fullName}</h1>
-                  <p className="text-lg text-slate-600 font-medium max-w-2xl mx-auto md:mx-0 leading-relaxed">{profile.headline}</p>
+                  <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 tracking-tight break-words">{profile.fullName}</h1>
+                  <p className="text-base md:text-lg text-slate-600 font-medium max-w-2xl mx-auto md:mx-0 leading-relaxed break-words">{profile.headline}</p>
                 </div>
-                <div className="flex flex-wrap justify-center md:justify-start gap-y-2 gap-x-6 text-sm font-medium text-slate-500 pt-1">
+                <div className="flex flex-wrap justify-center md:justify-start gap-y-2 gap-x-4 md:gap-x-6 text-sm font-medium text-slate-500 pt-1">
                   {profile.location && <span className="flex items-center gap-1.5"><MapPin size={16} className="text-slate-400" /> {profile.location}</span>}
                   {profile.currentCompany && <span className="flex items-center gap-1.5"><Briefcase size={16} className="text-slate-400" /> {profile.currentCompany}</span>}
-                  {profile.batchYear && <span className="flex items-center gap-1.5"><GraduationCap size={16} className="text-slate-400" /> {profile.batchYear}</span>}
+                  {profile.batchYear && <span className="flex items-center gap-1.5 text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md text-xs md:text-sm">Batch of {profile.batchYear}</span>}
+                </div>
+
+                {/* Mobile Resume Button */}
+                <div className="pt-4 md:hidden">
+                  <a
+                    href="http://localhost:8000/api/alumni/generate-resume"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 active:scale-95 transition-transform"
+                  >
+                    <Download size={18} /> Resume
+                  </a>
                 </div>
               </div>
             )}
 
-            {/* Desktop Actions */}
+            {/* Desktop Resume Button */}
             {!isEditing && (
               <div className="hidden md:flex gap-3 pb-4">
                 <a
                   href="http://localhost:8000/api/alumni/generate-resume"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold flex items-center gap-2"
+                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 hover:scale-105 transform"
                 >
                   <Download size={18} /> Resume
                 </a>
-
-
               </div>
             )}
           </div>
@@ -349,39 +348,39 @@ const AlumniProfile = () => {
       </div>
 
       {/* --- CONTENT AREA --- */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 md:mt-10">
         {!isEditing ? (
           /* ================= VIEW MODE ================= */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
             {/* Main Column */}
-            <div className="lg:col-span-8 space-y-8">
+            <div className="lg:col-span-8 space-y-6 md:space-y-8">
 
               {/* About */}
-              <Card className="p-8">
+              <Card className="p-4 sm:p-6 md:p-8">
                 <SectionTitle icon={User}>About Me</SectionTitle>
-                <p className="text-slate-600 leading-relaxed whitespace-pre-line text-lg">
+                <p className="text-slate-600 leading-relaxed whitespace-pre-line text-sm md:text-lg break-words">
                   {profile.bio || "No bio added yet."}
                 </p>
               </Card>
 
               {/* Experience */}
-              <Card className="p-8">
+              <Card className="p-4 sm:p-6 md:p-8">
                 <SectionTitle icon={Briefcase}>Experience</SectionTitle>
-                <div className="space-y-10">
+                <div className="space-y-8 md:space-y-10">
                   {profile.workHistory?.length > 0 ? profile.workHistory.map((job) => (
-                    <div key={job.id} className="relative pl-8 border-l-2 border-indigo-100 last:border-0 pb-2 group">
+                    <div key={job.id} className="relative pl-6 md:pl-8 border-l-2 border-indigo-100 last:border-0 pb-2 group">
                       <div className="absolute -left-[9px] top-1.5 w-[16px] h-[16px] rounded-full bg-white border-[4px] border-indigo-500 shadow-sm group-hover:scale-110 transition-transform"></div>
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
                         <div>
-                          <h4 className="text-xl font-bold text-slate-900">{job.role}</h4>
-                          <div className="text-base font-semibold text-indigo-600">{job.company}</div>
+                          <h4 className="text-lg md:text-xl font-bold text-slate-900">{job.role}</h4>
+                          <div className="text-sm md:text-base font-semibold text-indigo-600">{job.company}</div>
                         </div>
-                        <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full mt-2 sm:mt-0 w-fit uppercase tracking-wide">
+                        <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full w-fit uppercase tracking-wide whitespace-nowrap">
                           {job.duration}
                         </span>
                       </div>
-                      <p className="text-slate-600 leading-relaxed">{job.description}</p>
+                      <p className="text-slate-600 leading-relaxed text-sm md:text-base">{job.description}</p>
                     </div>
                   )) : (
                     <p className="text-slate-400 italic">No experience listed.</p>
@@ -389,31 +388,31 @@ const AlumniProfile = () => {
                 </div>
               </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                 {/* Education */}
-                <Card className="p-8 flex flex-col">
+                <Card className="p-4 sm:p-6 md:p-8 flex flex-col">
                   <SectionTitle icon={GraduationCap}>Education</SectionTitle>
                   <div className="flex-1">
-                    <h4 className="text-lg font-bold text-slate-900">{profile.college}</h4>
-                    <p className="text-indigo-600 font-medium mb-4">{profile.degree} in {profile.department}</p>
+                    <h4 className="text-lg font-bold text-slate-900 break-words">{profile.college}</h4>
+                    <p className="text-indigo-600 font-medium mb-4 text-sm md:text-base">{profile.degree} in {profile.department}</p>
                     <div className="border-t border-slate-100 pt-4 mt-auto">
-                      <div className="grid grid-cols-2 gap-4 text-sm text-slate-500">
+                      <div className="grid grid-cols-2 gap-4 text-xs md:text-sm text-slate-500">
                         <div>Batch: <span className="font-semibold text-slate-700 block">{profile.batchYear}</span></div>
-                        <div>Reg No: <span className="font-semibold text-slate-700 block">{profile.regNo}</span></div>
+                        <div>Reg No: <span className="font-semibold text-slate-700 block break-all">{profile.regNo}</span></div>
                       </div>
                     </div>
                   </div>
                 </Card>
 
                 {/* Achievements */}
-                <Card className="p-8 flex flex-col">
+                <Card className="p-4 sm:p-6 md:p-8 flex flex-col">
                   <SectionTitle icon={Award}>Achievements</SectionTitle>
                   <ul className="space-y-4">
                     {profile.achievements?.length > 0 ? profile.achievements.map((ach) => (
                       <li key={ach.id} className="flex items-start gap-3">
                         <CheckCircle size={20} className="text-emerald-500 mt-0.5 shrink-0" />
                         <div>
-                          <span className="text-slate-800 font-medium block leading-tight">{ach.title}</span>
+                          <span className="text-slate-800 font-medium block leading-tight text-sm md:text-base">{ach.title}</span>
                           <span className="text-slate-400 text-xs font-bold uppercase mt-1 block tracking-wide">{ach.year}</span>
                         </div>
                       </li>
@@ -428,25 +427,25 @@ const AlumniProfile = () => {
               <div className="sticky top-6 space-y-6">
 
                 {/* Contact */}
-                <Card className="p-6">
+                <Card className="p-4 sm:p-6">
                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-5">Connect</h3>
                   <div className="space-y-3">
                     {profile.email && (
-                      <a href={`mailto:${profile.email}`} className="flex items-center gap-3 text-slate-600 hover:text-indigo-600 transition group p-2 hover:bg-slate-50 rounded-lg -mx-2">
-                        <div className="p-2 bg-slate-100 text-slate-500 rounded-lg group-hover:bg-indigo-100 group-hover:text-indigo-600 transition"><Mail size={18} /></div>
+                      <a href={`mailto:${profile.email}`} className="flex items-center gap-3 text-slate-600 hover:text-indigo-600 transition group p-2 hover:bg-slate-50 rounded-lg -mx-2 overflow-hidden">
+                        <div className="p-2 bg-slate-100 text-slate-500 rounded-lg group-hover:bg-indigo-100 group-hover:text-indigo-600 transition shrink-0"><Mail size={18} /></div>
                         <span className="font-medium text-sm truncate">{profile.email}</span>
                       </a>
                     )}
                     {profile.phone && (
-                      <a href={`tel:${profile.phone}`} className="flex items-center gap-3 text-slate-600 hover:text-indigo-600 transition group p-2 hover:bg-slate-50 rounded-lg -mx-2">
-                        <div className="p-2 bg-slate-100 text-slate-500 rounded-lg group-hover:bg-indigo-100 group-hover:text-indigo-600 transition"><Phone size={18} /></div>
+                      <a href={`tel:${profile.phone}`} className="flex items-center gap-3 text-slate-600 hover:text-indigo-600 transition group p-2 hover:bg-slate-50 rounded-lg -mx-2 overflow-hidden">
+                        <div className="p-2 bg-slate-100 text-slate-500 rounded-lg group-hover:bg-indigo-100 group-hover:text-indigo-600 transition shrink-0"><Phone size={18} /></div>
                         <span className="font-medium text-sm">{profile.phone}</span>
                       </a>
                     )}
 
                     <div className="h-px bg-slate-100 my-4"></div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       {profile.linkedin && <a href={safeHref(profile.linkedin)} target="_blank" rel="noreferrer" className="p-2.5 bg-slate-50 rounded-lg text-slate-400 hover:text-white hover:bg-[#0077b5] transition"><Linkedin size={20} /></a>}
                       {profile.github && <a href={safeHref(profile.github)} target="_blank" rel="noreferrer" className="p-2.5 bg-slate-50 rounded-lg text-slate-400 hover:text-white hover:bg-[#333] transition"><Github size={20} /></a>}
                       {profile.twitter && <a href={safeHref(profile.twitter)} target="_blank" rel="noreferrer" className="p-2.5 bg-slate-50 rounded-lg text-slate-400 hover:text-white hover:bg-[#1DA1F2] transition"><Twitter size={20} /></a>}
@@ -456,7 +455,7 @@ const AlumniProfile = () => {
                 </Card>
 
                 {/* Skills */}
-                <Card className="p-6">
+                <Card className="p-4 sm:p-6">
                   <div className="mb-6">
                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Technical Skills</h3>
                     <div className="flex flex-wrap gap-2">
@@ -502,14 +501,14 @@ const AlumniProfile = () => {
           </div>
         ) : (
           /* ================= EDIT MODE ================= */
-          <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
 
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 text-blue-700 text-sm items-start">
               <CheckCircle size={18} className="mt-0.5 shrink-0" />
               <p>You are currently editing your profile. Changes made here will be updated on your public profile immediately after saving.</p>
             </div>
 
-            <Card className="p-8">
+            <Card className="p-4 sm:p-6 md:p-8">
               <SectionTitle icon={User}>Personal Information</SectionTitle>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div><Label>Full Name</Label><Input name="fullName" value={profile.fullName} onChange={handleChange} /></div>
@@ -524,7 +523,7 @@ const AlumniProfile = () => {
                     <option>Male</option><option>Female</option><option>Other</option>
                   </Select>
                 </div>
-                <div><Label>Reg No</Label><Input name="regNo" value={profile.regNo} onChange={handleChange} /></div>
+                <Input name="regNo" value={profile.regNo} disabled readOnly className="bg-slate-100 cursor-not-allowed text-slate-500" />
                 <div><Label>Batch Year</Label><Input name="batchYear" value={profile.batchYear} onChange={handleChange} /></div>
                 <div className="md:col-span-2">
                   <Label>Bio</Label>
@@ -533,15 +532,15 @@ const AlumniProfile = () => {
               </div>
             </Card>
 
-            <Card className="p-8">
+            <Card className="p-4 sm:p-6 md:p-8">
               <SectionTitle icon={GraduationCap}>Academic & Professional</SectionTitle>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2 p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-                  <div className="w-full mr-4">
+                <div className="md:col-span-2 p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="w-full sm:mr-4">
                     <Label>College</Label>
                     <Input name="college" value={profile.college} onChange={handleChange} className="bg-white" />
                   </div>
-                  <span className="px-3 py-1 bg-slate-200 text-slate-600 text-xs font-bold rounded uppercase tracking-wide shrink-0 mt-6">Primary</span>
+                  <span className="px-3 py-1 bg-slate-200 text-slate-600 text-xs font-bold rounded uppercase tracking-wide shrink-0 sm:mt-6">Primary</span>
                 </div>
                 <div><Label>Degree</Label><Input name="degree" value={profile.degree} onChange={handleChange} /></div>
                 <div><Label>Department</Label><Input name="department" value={profile.department} onChange={handleChange} /></div>
@@ -550,22 +549,22 @@ const AlumniProfile = () => {
               </div>
             </Card>
 
-            <Card className="p-8">
+            <Card className="p-4 sm:p-6 md:p-8">
               <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl"><Briefcase size={20} strokeWidth={2.5} /></div>
                   <h3 className="text-xl font-bold text-slate-900 tracking-tight">Work History</h3>
                 </div>
-                <button onClick={() => addItem("workHistory", { id: makeId(), company: "", role: "", duration: "", description: "" })} className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-100 transition flex items-center gap-2">
-                  <Plus size={16} /> Add Position
+                <button onClick={() => addItem("workHistory", { id: makeId(), company: "", role: "", duration: "", description: "" })} className="bg-indigo-50 text-indigo-600 px-3 py-2 md:px-4 rounded-lg text-sm font-bold hover:bg-indigo-100 transition flex items-center gap-2">
+                  <Plus size={16} /> <span className="hidden sm:inline">Add Position</span><span className="sm:hidden">Add</span>
                 </button>
               </div>
               <div className="space-y-6">
                 {profile.workHistory?.map((job, index) => (
-                  <div key={job.id} className="bg-slate-50 p-6 rounded-xl border border-slate-200 relative group">
+                  <div key={job.id} className="bg-slate-50 p-4 sm:p-6 rounded-xl border border-slate-200 relative group">
                     <button onClick={() => removeItem("workHistory", job.id)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition"><Trash2 size={18} /></button>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div><Label>Company</Label><Input value={job.company} onChange={(e) => updateNestedItem("workHistory", index, "company", e.target.value)} className="bg-white" /></div>
+                      <div className="pr-10 md:pr-0"><Label>Company</Label><Input value={job.company} onChange={(e) => updateNestedItem("workHistory", index, "company", e.target.value)} className="bg-white" /></div>
                       <div><Label>Role</Label><Input value={job.role} onChange={(e) => updateNestedItem("workHistory", index, "role", e.target.value)} className="bg-white" /></div>
                       <div><Label>Duration</Label><Input value={job.duration} onChange={(e) => updateNestedItem("workHistory", index, "duration", e.target.value)} className="bg-white" placeholder="e.g. Jan 2020 - Present" /></div>
                       <div className="md:col-span-2"><Label>Description</Label><TextArea rows="2" value={job.description} onChange={(e) => updateNestedItem("workHistory", index, "description", e.target.value)} className="bg-white" /></div>
@@ -575,7 +574,7 @@ const AlumniProfile = () => {
               </div>
             </Card>
 
-            <Card className="p-8">
+            <Card className="p-4 sm:p-6 md:p-8">
               <SectionTitle icon={CheckCircle}>Skills & Socials</SectionTitle>
               <div className="space-y-6">
                 <div>
@@ -595,12 +594,12 @@ const AlumniProfile = () => {
               </div>
             </Card>
 
-            <Card className="p-8">
+            <Card className="p-4 sm:p-6 md:p-8">
               <SectionTitle icon={Heart}>Community</SectionTitle>
               <div className="space-y-6">
                 <div className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl bg-slate-50">
                   <input type="checkbox" id="isMentor" name="isMentor" checked={profile.isMentor} onChange={handleChange} className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500" />
-                  <label htmlFor="isMentor" className="font-bold text-slate-700 select-none cursor-pointer">I am available to Mentor students</label>
+                  <label htmlFor="isMentor" className="font-bold text-slate-700 select-none cursor-pointer text-sm md:text-base">I am available to Mentor students</label>
                 </div>
                 {profile.isMentor && (
                   <div className="animate-in fade-in slide-in-from-top-2">
@@ -610,7 +609,7 @@ const AlumniProfile = () => {
                 )}
                 <div className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl bg-slate-50">
                   <input type="checkbox" id="referrals" name="isOpenToReferrals" checked={profile.isOpenToReferrals} onChange={handleChange} className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500" />
-                  <label htmlFor="referrals" className="font-bold text-slate-700 select-none cursor-pointer">I am open to providing Referrals</label>
+                  <label htmlFor="referrals" className="font-bold text-slate-700 select-none cursor-pointer text-sm md:text-base">I am open to providing Referrals</label>
                 </div>
                 {profile.isOpenToReferrals && (
                   <div className="animate-in fade-in slide-in-from-top-2">
@@ -621,14 +620,14 @@ const AlumniProfile = () => {
               </div>
             </Card>
 
-            <Card className="p-8">
+            <Card className="p-4 sm:p-6 md:p-8">
               <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl"><Award size={20} strokeWidth={2.5} /></div>
                   <h3 className="text-xl font-bold text-slate-900 tracking-tight">Achievements</h3>
                 </div>
-                <button onClick={() => addItem("achievements", { id: makeId(), title: "", year: "" })} className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-100 transition flex items-center gap-2">
-                  <Plus size={16} /> Add
+                <button onClick={() => addItem("achievements", { id: makeId(), title: "", year: "" })} className="bg-indigo-50 text-indigo-600 px-3 py-2 md:px-4 rounded-lg text-sm font-bold hover:bg-indigo-100 transition flex items-center gap-2">
+                  <Plus size={16} /> <span className="hidden sm:inline">Add</span><span className="sm:hidden">Add</span>
                 </button>
               </div>
               <div className="space-y-4">
@@ -636,7 +635,7 @@ const AlumniProfile = () => {
                   <div key={ach.id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 relative grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                     <div className="md:col-span-8"><Label>Title</Label><Input value={ach.title} onChange={(e) => updateNestedItem("achievements", index, "title", e.target.value)} className="bg-white" /></div>
                     <div className="md:col-span-3"><Label>Year</Label><Input value={ach.year} onChange={(e) => updateNestedItem("achievements", index, "year", e.target.value)} className="bg-white" /></div>
-                    <div className="md:col-span-1 flex justify-end pb-3">
+                    <div className="md:col-span-1 flex justify-end pb-2 md:pb-3">
                       <button onClick={() => removeItem("achievements", ach.id)} className="text-slate-400 hover:text-red-500 transition"><Trash2 size={20} /></button>
                     </div>
                   </div>

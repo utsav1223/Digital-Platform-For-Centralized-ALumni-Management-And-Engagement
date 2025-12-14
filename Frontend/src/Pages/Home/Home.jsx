@@ -7,7 +7,6 @@ import Testimonials from "./Testimonials.jsx";
 import Footer from "./Footer.jsx";
 import FAQ from "./FAQ.jsx";
 import Contact from "./Contact.jsx";
-
 export default function Home() {
   return (
     <>

@@ -1,23 +1,24 @@
 import { body } from "express-validator";
-
+const strictEmailRegex =
+  /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 // ======================
 // ALUMNI REGISTRATION VALIDATOR
 // ======================
 export const registerValidator = [
-
   // FULL NAME
   body("fullName")
     .trim()
     .notEmpty().withMessage("Full Name is required")
     .isLength({ min: 3 }).withMessage("Full Name must be at least 3 characters long")
     .matches(/^[A-Za-z\s]+$/).withMessage("Full Name can contain only letters and spaces"),
-
   // EMAIL
   body("email")
     .trim()
-    .notEmpty().withMessage("Email is required")
-    .isEmail().withMessage("Please enter a valid email address")
-    .normalizeEmail(),
+    .notEmpty()
+    .withMessage("Email is required")
+    .bail()
+    .custom((value) => strictEmailRegex.test(value))
+    .withMessage("Enter a valid email address"),
 
   // PASSWORD
   body("password")
@@ -53,8 +54,6 @@ export const registerValidator = [
     .matches(/^[A-Za-z\s]+$/)
     .withMessage("Company name can contain only letters and spaces"),
 ];
-
-
 // ======================
 // ALUMNI LOGIN VALIDATOR
 // ======================
@@ -70,9 +69,6 @@ export const loginValidator = [
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters long"),
 ];
-
-
-
 // STUDENT LOGIN VALIDATION
 export const studentLoginValidation = [
   body("regNo")
@@ -82,4 +78,92 @@ export const studentLoginValidation = [
   body("password")
     .notEmpty().withMessage("Password is required")
     .isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
+];
+/* ============================
+   FORGOT PASSWORD VALIDATOR
+============================ */
+export const forgotPasswordValidator = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .bail()
+    .custom((value) => strictEmailRegex.test(value))
+    .withMessage("Enter a valid email address"),
+];
+/* ============================
+   RESET PASSWORD VALIDATOR
+============================ */
+export const resetPasswordValidator = [
+  body("email")
+  .trim()
+  .notEmpty()
+  .withMessage("Email is required")
+  .bail()
+  .custom((value) => strictEmailRegex.test(value))
+  .withMessage("Enter a valid email address"),
+
+
+  body("otp")
+    .notEmpty()
+    .withMessage("OTP is required")
+    .isLength({ min: 6, max: 6 })
+    .withMessage("OTP must be 6 digits"),
+
+  body("newPassword")
+    .notEmpty()
+    .withMessage("New password is required")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters")
+    .matches(/[A-Z]/)
+    .withMessage("Password must contain one uppercase letter")
+    .matches(/[a-z]/)
+    .withMessage("Password must contain one lowercase letter")
+    .matches(/[0-9]/)
+    .withMessage("Password must contain one number")
+    .matches(/[!@#$%^&*]/)
+    .withMessage("Password must contain one special character"),
+
+  body("confirmPassword")
+    .custom((value, { req }) => value === req.body.newPassword)
+    .withMessage("Passwords do not match"),
+];
+
+
+
+/* ============================
+   STUDENT FORGOT PASSWORD
+============================ */
+export const studentForgotPasswordValidator = [
+  body("regNo")
+    .trim()
+    .notEmpty().withMessage("Registration number is required")
+    .matches(/^[0-9]{8}$/).withMessage("Registration number must be exactly 8 digits"),
+];
+
+/* ============================
+   STUDENT RESET PASSWORD
+============================ */
+export const studentResetPasswordValidator = [
+  body("regNo")
+    .trim()
+    .notEmpty().withMessage("Registration number is required")
+    .matches(/^[0-9]{8}$/).withMessage("Registration number must be exactly 8 digits"),
+
+  body("otp")
+    .trim()
+    .notEmpty().withMessage("OTP is required")
+    .isLength({ min: 6, max: 6 }).withMessage("OTP must be 6 digits"),
+
+  body("newPassword")
+    .notEmpty().withMessage("New password is required")
+    .isLength({ min: 8 }).withMessage("Password must be at least 8 characters")
+    .matches(/[A-Z]/).withMessage("Password must contain one uppercase letter")
+    .matches(/[a-z]/).withMessage("Password must contain one lowercase letter")
+    .matches(/[0-9]/).withMessage("Password must contain one number")
+    .matches(/[!@#$%^&*]/).withMessage("Password must contain one special character"),
+
+  body("confirmPassword")
+    .custom((value, { req }) => value === req.body.newPassword)
+    .withMessage("Passwords do not match"),
 ];

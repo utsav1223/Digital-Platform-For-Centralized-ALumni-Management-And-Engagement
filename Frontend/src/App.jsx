@@ -1,56 +1,100 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-// Import your pages
-import Login from './Pages/Login/UserLogin.jsx';
-import Home from './Pages/Home/Home.jsx'; 
-import AdminDashboard from './Pages/admindashboard/admin-components/switcher.jsx'; 
-import Adminlogin from './Pages/admindashboard/Admin-login/adminLogin.jsx'; 
-import Register from './Pages/Register/Register.jsx';
-import ProtectedRoute from './Pages/admindashboard/admin-components/ProtectedRoute.jsx';
-import AlumniDashboard from './Pages/alumnidashboard/start.jsx';
-import StudentDashboard from './Pages/studentdashboard/StudentDashboard.jsx';
+/* ---------- PUBLIC PAGES ---------- */
+import Home from "./Pages/Home/Home.jsx";
+import UserLogin from "./Pages/Login/UserLogin.jsx";
+import Register from "./Pages/Register/Register.jsx";
+import ForgotPassword from "./Pages/Login/ForgotPassword.jsx";
+import ResetPassword from "./Pages/Login/ResetPassword.jsx";
+import StudentForgotPassword from "./Pages/Login/StudentForgotPassword";
+import StudentResetPassword from "./Pages/Login/StudentResetPassword";
+
+
+/* ---------- ADMIN ---------- */
+import Adminlogin from "./Pages/admindashboard/Admin-login/adminLogin.jsx";
+import AdminDashboard from "./Pages/admindashboard/admin-components/switcher.jsx";
+import AdminProtectedRoute from "./Pages/admindashboard/admin-components/ProtectedRoute.jsx";
+
+/* ---------- ALUMNI ---------- */
+import AlumniDashboard from "./Pages/alumnidashboard/start.jsx";
+import AlumniProtectedRoute from "./Pages/alumnidashboard/ProtectedRoute.jsx";
+
+/* ---------- STUDENT ---------- */
+import StudentDashboard from "./Pages/studentdashboard/StudentDashboard.jsx";
+import StudentProtectedRoute from "./Pages/studentdashboard/StudentProtectedRoute.jsx";
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Public/Main routes */}
+
+        {/* ================= PUBLIC ROUTES ================= */}
         <Route path="/" element={<Home />} />
+        <Route path="/login" element={<UserLogin />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
 
-        {/* Admin public login */}
+        {/* Forgot / Reset Password */}
+        <Route path="/alumni/forgot-password" element={<ForgotPassword />} />
+        <Route path="/alumni/reset-password" element={<ResetPassword />} />
+        <Route path="/student/forgot-password" element={<StudentForgotPassword />} />
+        <Route path="/student/reset-password" element={<StudentResetPassword />} />
+
+        {/* ================= ALUMNI DASHBOARD (PROTECTED) ================= */}
+        <Route
+          path="/alumnidashboard/*"
+          element={
+            <AlumniProtectedRoute>
+              <AlumniDashboard />
+            </AlumniProtectedRoute>
+          }
+        />
+
+        {/* ================= STUDENT DASHBOARD ================= */}
+        {/* <Route path="/studentdashboard" element={<StudentDashboard />} />
+        <Route
+          path="/studentdashboard"
+          element={
+            <StudentProtectedRoute>
+              <StudentDashboard />
+            </StudentProtectedRoute>
+          }
+        /> */}
+        <Route
+          path="/studentdashboard"
+          element={
+            <StudentProtectedRoute>
+              <StudentDashboard />
+            </StudentProtectedRoute>
+          }
+        />
+
+
+
+        {/* ================= ADMIN ================= */}
         <Route path="/admin/login" element={<Adminlogin />} />
-
-        {/* Keep plain /admin -> admin login */}
         <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-        {/* Alumni Dashboard */}
-        <Route path="/alumnidashboard" element={<AlumniDashboard/>}/>
 
-        {/* Explicitly protect the dashboard route */}
         <Route
           path="/admin/dashboard"
           element={
-            <ProtectedRoute>
+            <AdminProtectedRoute>
               <AdminDashboard />
-            </ProtectedRoute>
+            </AdminProtectedRoute>
           }
         />
 
-        {/* Protect any other admin subroutes (optional) */}
         <Route
           path="/admin/*"
           element={
-            <ProtectedRoute>
+            <AdminProtectedRoute>
               <AdminDashboard />
-            </ProtectedRoute>
+            </AdminProtectedRoute>
           }
         />
 
-        {/* Optional: catch-all for unknown routes */}
+        {/* ================= FALLBACK ================= */}
         <Route path="*" element={<Navigate to="/" replace />} />
-        <Route path="/alumnidashboard" element={<AlumniDashboard/>}/>
-        <Route path="/studentdashboard" element={<StudentDashboard/>}/>
+
       </Routes>
     </Router>
   );

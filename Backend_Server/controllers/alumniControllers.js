@@ -4,7 +4,7 @@ import path from "path";
 import Alumni from "../models/Alumni.js";
 import bcrypt from "bcryptjs";
 import multer from "multer";
-
+import sendEmail from "../utils/sendEmail.js";
 /* ------------------------------
    LOCAL FILE UPLOAD (NO CLOUDINARY)
 --------------------------------*/
@@ -62,7 +62,13 @@ export const registerAlumni = async (req, res) => {
 
     req.session.alumniId = newAlumni._id;
 
-    res.json({ message: "Registration successful", alumni: newAlumni });
+    const alumniSafe = await Alumni.findById(newAlumni._id).select("-password");
+
+    res.json({
+      message: "Registration successful",
+      alumni: alumniSafe,
+    });
+
 
   } catch (error) {
     console.log("Register Error:", error);
@@ -78,11 +84,6 @@ export const registerAlumni = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
-
-
-
 /* ------------------------------
    LOGIN
 --------------------------------*/
@@ -98,7 +99,24 @@ export const loginAlumni = async (req, res) => {
     if (!valid)
       return res.status(400).json({ message: "Invalid password" });
 
+    // req.session.alumniId = alumni._id;
+    // 🔥 Clear other roles
+    req.session.studentId = null;
+    req.session.adminId = null;
+
+    // Set alumni session
     req.session.alumniId = alumni._id;
+    req.session.role = "alumni";
+
+    // res.json({
+    //   loggedIn: true,
+    //   alumni: {
+    //     id: alumni._id,
+    //     fullName: alumni.fullName,
+    //     regNo: alumni.regNo,
+    //     email: alumni.email,
+    //   },
+    // });
 
     res.json({
       loggedIn: true,
@@ -107,8 +125,10 @@ export const loginAlumni = async (req, res) => {
         fullName: alumni.fullName,
         regNo: alumni.regNo,
         email: alumni.email,
+        profileImage: alumni.profileImage || "",
       },
     });
+
   } catch (error) {
     console.log("Login Error:", error);
     res.status(500).json({ message: "Server error" });
@@ -121,20 +141,36 @@ export const loginAlumni = async (req, res) => {
 export const getLoggedInAlumni = async (req, res) => {
   try {
     if (!req.session.alumniId) {
-      return res.json({ loggedIn: false });
+      return res.status(401).json({ loggedIn: false });
     }
 
-    const alumni = await Alumni.findById(req.session.alumniId).select(
-      "-password"
-    );
+    const alumni = await Alumni.findById(req.session.alumniId).select("-password");
 
-    res.json({ loggedIn: true, alumni });
-  } catch (error) {
-    console.log("Session Fetch Error:", error);
+    if (!alumni) {
+      return res.status(401).json({ loggedIn: false });
+    }
+
+    // res.status(200).json({
+    //   loggedIn: true,
+    //   alumni,
+    // });
+
+    res.json({
+      loggedIn: true,
+      alumni: {
+        id: alumni._id,
+        fullName: alumni.fullName,
+        email: alumni.email,
+        regNo: alumni.regNo,
+        profileImage: alumni.profileImage || "", // 🔥 THIS WAS MISSING
+      },
+    });
+
+  } catch (err) {
+    console.error("Session check error:", err);
     res.status(500).json({ loggedIn: false });
   }
 };
-
 /* ------------------------------
    LOGOUT
 --------------------------------*/
@@ -169,6 +205,99 @@ export const getProfile = async (req, res) => {
 /* ------------------------------
    UPDATE PROFILE (LOCAL UPLOAD)
 --------------------------------*/
+// export const updateProfile = async (req, res) => {
+//   try {
+//     const userId = req.session.alumniId;
+//     if (!userId)
+//       return res.status(401).json({ message: "Not authenticated" });
+
+//     const alumni = await Alumni.findById(userId);
+//     if (!alumni)
+//       return res.status(404).json({ message: "Alumni not found" });
+
+//     /* ------------------------------
+//        HANDLE IMAGE UPLOAD (NO CLOUDINARY)
+//     --------------------------------*/
+//     if (req.files) {
+//       if (req.files.profileImage) {
+//         alumni.profileImage =
+//           "/uploads/" + req.files.profileImage[0].filename;
+//       }
+
+//       if (req.files.coverImage) {
+//         alumni.coverImage =
+//           "/uploads/" + req.files.coverImage[0].filename;
+//       }
+//     }
+
+//     /* ------------------------------
+//        HANDLE TEXT FIELDS
+//     --------------------------------*/
+//     const body = { ...req.body };
+
+//     const jsonFields = [
+//       "skills",
+//       "domains",
+//       "workHistory",
+//       "achievements",
+//       "mentorshipTopics",
+//     ];
+
+//     jsonFields.forEach((field) => {
+//       if (body[field]) {
+//         try {
+//           body[field] = JSON.parse(body[field]);
+//         } catch (err) {
+//           console.log(`JSON parse failed for ${field}`);
+//         }
+//       }
+//     });
+
+//     const allowed = [
+//       "fullName",
+//       "headline",
+//       "phone",
+//       "location",
+//       "gender",
+//       "bio",
+//       "college",
+//       "degree",
+//       "department",
+//       "currentCompany",
+//       "currentPosition",
+//       "skills",
+//       "domains",
+//       "linkedin",
+//       "github",
+//       "twitter",
+//       "website",
+//       "workHistory",
+//       "achievements",
+//       "isMentor",
+//       "mentorshipTopics",
+//       "isOpenToReferrals",
+//       "referralIndustries",
+//       "regNo",
+//       "batchYear",
+//     ];
+
+//     allowed.forEach((field) => {
+//       if (body[field] !== undefined) alumni[field] = body[field];
+//     });
+
+//     await alumni.save();
+
+//     res.json({ success: true, alumni });
+//   } catch (err) {
+//     console.error("updateProfile error:", err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+//generate resume
+
+
+
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.session.alumniId;
@@ -179,24 +308,19 @@ export const updateProfile = async (req, res) => {
     if (!alumni)
       return res.status(404).json({ message: "Alumni not found" });
 
-    /* ------------------------------
-       HANDLE IMAGE UPLOAD (NO CLOUDINARY)
-    --------------------------------*/
-    if (req.files) {
-      if (req.files.profileImage) {
-        alumni.profileImage =
-          "/uploads/" + req.files.profileImage[0].filename;
-      }
+    // 🔐 BLOCK regNo updates
+    delete req.body.regNo;
 
-      if (req.files.coverImage) {
-        alumni.coverImage =
-          "/uploads/" + req.files.coverImage[0].filename;
-      }
+    /* ---------- IMAGE UPLOAD ---------- */
+    if (req.files?.profileImage) {
+      alumni.profileImage = "/uploads/" + req.files.profileImage[0].filename;
     }
 
-    /* ------------------------------
-       HANDLE TEXT FIELDS
-    --------------------------------*/
+    if (req.files?.coverImage) {
+      alumni.coverImage = "/uploads/" + req.files.coverImage[0].filename;
+    }
+
+    /* ---------- TEXT DATA ---------- */
     const body = { ...req.body };
 
     const jsonFields = [
@@ -211,9 +335,7 @@ export const updateProfile = async (req, res) => {
       if (body[field]) {
         try {
           body[field] = JSON.parse(body[field]);
-        } catch (err) {
-          console.log(`JSON parse failed for ${field}`);
-        }
+        } catch { }
       }
     });
 
@@ -241,7 +363,6 @@ export const updateProfile = async (req, res) => {
       "mentorshipTopics",
       "isOpenToReferrals",
       "referralIndustries",
-      "regNo",
       "batchYear",
     ];
 
@@ -258,7 +379,9 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-//generate resume
+
+
+
 export const generateResume = async (req, res) => {
   try {
     const userId = req.session.alumniId;
@@ -323,5 +446,186 @@ export const generateResume = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Error generating resume" });
+  }
+};
+
+/* =========================
+   FORGOT PASSWORD (SEND OTP)
+========================= */
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // 1️⃣ CHECK ALUMNI EXISTS
+    const alumni = await Alumni.findOne({ email });
+    if (!alumni) {
+      return res.status(404).json({ message: "Email not registered" });
+    }
+
+    // 2️⃣ GENERATE OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 3️⃣ SAVE OTP + EXPIRY
+    alumni.resetOTP = otp;
+    alumni.resetOTPExpiry = Date.now() + 10 * 60 * 1000; // 10 mins
+    await alumni.save();
+
+    // 4️⃣ SEND EMAIL (⭐ REG NO ADDED ⭐)
+    // await sendEmail({
+    //   to: alumni.email,
+    //   subject: "Password Reset OTP – Alumni Portal",
+    //   html: `
+    //     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+    //       <h2>Hello ${alumni.fullName || "Alumni"},</h2>
+
+    //       <p>You requested to reset your password.</p>
+
+    //       <p>
+    //         <strong>Registration Number:</strong>
+    //         ${alumni.regNo}
+    //       </p>
+
+    //       <p>Your One-Time Password (OTP) is:</p>
+
+    //       <h1 style="letter-spacing: 4px; color: #2563eb;">
+    //         ${otp}
+    //       </h1>
+
+    //       <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+
+    //       <p>If you did not request this, please ignore this email.</p>
+
+    //       <br/>
+    //       <p>
+    //         Regards,<br/>
+    //         <strong>Alumni Portal Team</strong>
+    //       </p>
+    //     </div>
+    //   `,
+    // });
+
+    await sendEmail({
+      to: alumni.email,
+      subject: "🔐 Password Reset OTP – Alumni Portal",
+      html: `
+    <div style="
+      max-width: 520px;
+      margin: 0 auto;
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+    ">
+
+      <!-- Header -->
+      <div style="
+        background-color: #2563eb;
+        color: #ffffff;
+        padding: 20px;
+        text-align: center;
+      ">
+        <h2 style="margin: 0;">Alumni Portal</h2>
+        <p style="margin: 5px 0 0; font-size: 14px;">
+          Password Reset Request
+        </p>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 24px; color: #111827;">
+        <p style="font-size: 15px;">
+          Hello <strong>${alumni.fullName || "Alumni"}</strong>,
+        </p>
+
+        <p style="font-size: 15px; line-height: 1.6;">
+          We received a request to reset your Alumni Portal password.
+          Please use the OTP below to continue.
+        </p>
+
+        <p style="font-size: 14px; margin-top: 12px;">
+          <strong>Registration Number:</strong> ${alumni.regNo}
+        </p>
+
+        <!-- OTP Box -->
+        <div style="
+          margin: 24px 0;
+          padding: 16px;
+          text-align: center;
+          background-color: #f3f4f6;
+          border-radius: 6px;
+          font-size: 28px;
+          font-weight: bold;
+          letter-spacing: 6px;
+          color: #2563eb;
+        ">
+          ${otp}
+        </div>
+
+        <p style="font-size: 14px; color: #374151;">
+          ⏱ <strong>This OTP is valid for 10 minutes</strong>
+        </p>
+
+        <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+          If you did not request this password reset, please ignore this email.
+          Your account will remain secure.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div style="
+        background-color: #f9fafb;
+        padding: 14px;
+        text-align: center;
+        font-size: 12px;
+        color: #6b7280;
+      ">
+        © ${new Date().getFullYear()} Alumni Portal · All rights reserved
+      </div>
+    </div>
+  `,
+    });
+
+
+    res.json({ message: "OTP sent to email" });
+
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+/* =========================
+   RESET PASSWORD
+========================= */
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    // 1️⃣ FIND ALUMNI
+    const alumni = await Alumni.findOne({ email });
+    if (!alumni) {
+      return res.status(404).json({ message: "Invalid request" });
+    }
+
+    // 2️⃣ VERIFY OTP
+    if (
+      alumni.resetOTP !== otp ||
+      alumni.resetOTPExpiry < Date.now()
+    ) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // 3️⃣ UPDATE PASSWORD
+    alumni.password = await bcrypt.hash(newPassword, 10);
+    alumni.resetOTP = undefined;
+    alumni.resetOTPExpiry = undefined;
+
+    await alumni.save();
+
+    res.json({ message: "Password reset successful" });
+
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

@@ -4,11 +4,10 @@ const EventSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: String,
 
-  organizer: String,
-
   creator_user_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Alumni",
+    required: true,
   },
 
   created_by_role: {
@@ -17,19 +16,44 @@ const EventSchema = new mongoose.Schema({
     default: "alumni",
   },
 
+  category: {
+    type: String,
+    enum: ["Workshop", "Webinar", "Conference", "Meetup", "Networking", "Social", "Other"],
+  },
+
+  type: {
+    type: String,
+    enum: ["In-person", "Virtual", "Hybrid"],
+    default: "In-person",
+  },
+
   location: String,
 
-  date: String,   // "2025-02-01"
-  time: String,   // "10:00 AM - 2:00 PM"
+  startDate: String,
+  endDate: String,
+  startTime: String,
+  endTime: String,
 
   is_online: { type: Boolean, default: false },
   link: String,
 
   status: {
     type: String,
-    enum: ["pending", "published"],
+    enum: ["pending", "accepted", "rejected"],
     default: "pending",
   },
+
+  reviewed_by: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Alumni",
+  },
+
+  rejection_reason: String,
+
+  attendees: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Alumni",
+  }],
 }, { timestamps: true });
 
 export default mongoose.model("Event", EventSchema);

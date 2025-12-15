@@ -1,6 +1,6 @@
 export function mockRequests() {
   const now = new Date();
-  const statuses = ["pending", "accepted", "rejected"];
+    const statuses = ["pending", "approved", "rejected"];
   return Array.from({ length: 21 }).map((_, i) => ({
     id: `r_${i + 1}`,
     type: ["mentorship", "internship", "job"][i % 3],
@@ -11,7 +11,7 @@ export function mockRequests() {
     phone: `+91-9${Math.floor(100000000 + Math.random() * 900000000)}`,
     message: "This is a sample message sent by the user for the admin to review.",
     date: now.toISOString().slice(0, 10),
-    status: statuses[i % 3],
+      status: i % 4 === 0 ? "approved" : i % 5 === 0 ? "rejected" : "pending",
   }));
 }
 

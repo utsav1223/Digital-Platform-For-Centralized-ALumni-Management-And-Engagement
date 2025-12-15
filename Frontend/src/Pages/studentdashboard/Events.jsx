@@ -1,64 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar, MapPin, Clock, Users, ArrowRight, Filter, Search, ArrowUpRight, MoreHorizontal, Video, X } from 'lucide-react';
-
-// --- MOCK DATA ---
-const INITIAL_EVENTS = [
-  {
-    id: 1,
-    title: "Tech Career Fair 2024",
-    category: "Career",
-    type: "In-person",
-    location: "University Main Hall",
-    date: { month: "MAR", day: "15" },
-    startDate: "2024-03-15",
-    time: "10:00 AM - 4:00 PM",
-    attendees: 150,
-    avatars: [
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100",
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100",
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100"
-    ],
-    image: "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    description: "Meet top tech companies and explore internship and job opportunities. Network with industry professionals and attend workshops.",
-    status: "upcoming"
-  },
-  {
-    id: 2,
-    title: "Hackathon: Code for Good",
-    category: "Hackathon",
-    type: "In-person",
-    location: "Tech Hub Building",
-    date: { month: "APR", day: "05" },
-    startDate: "2024-04-05",
-    time: "9:00 AM - 9:00 PM",
-    attendees: 200,
-    avatars: [
-      "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=100",
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100"
-    ],
-    image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    description: "24-hour hackathon focused on building solutions for social good. Work in teams and win exciting prizes!",
-    status: "upcoming"
-  },
-  {
-    id: 3,
-    title: "Alumni Networking Mixer",
-    category: "Networking",
-    type: "In-person",
-    location: "Grand Ballroom",
-    date: { month: "MAR", day: "22" },
-    startDate: "2024-03-22",
-    time: "6:00 PM - 9:00 PM",
-    attendees: 80,
-    avatars: [
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100",
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100"
-    ],
-    image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    description: "Connect with successful alumni from various industries. Great opportunity for mentorship and career advice.",
-    status: "upcoming"
-  }
-];
+import { useAuth } from '../../context/authContext.jsx';
 
 // --- SUB COMPONENTS ---
 const TabLink = ({ active, onClick, label, count, isSpecial }) => (
@@ -78,17 +20,31 @@ const TabLink = ({ active, onClick, label, count, isSpecial }) => (
   </button>
 );
 
-const EventCard = ({ event, onClick }) => (
-  <div 
-    onClick={() => onClick(event)}
-    className="group relative bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full cursor-pointer"
-  >
-    <div className="flex justify-between items-start mb-5">
-      <div className="flex gap-4">
-        <div className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl border transition-colors duration-300 shadow-sm bg-indigo-50 border-indigo-100 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white`}>
-          <span className="text-[10px] font-bold uppercase tracking-wider">{event.date.month}</span>
-          <span className="text-xl font-bold leading-none mt-0.5">{event.date.day}</span>
-        </div>
+const EventCard = ({ event, onClick, onRegister, isRegistering, currentUserId }) => {
+  // Format date from backend event
+  const eventDate = event.startDate ? new Date(event.startDate) : new Date();
+  const month = eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+  const day = eventDate.getDate();
+  
+  // Check if current user is already registered
+  const norm = (v) => {
+    const raw = (v && typeof v === 'object') ? (v._id ?? v.user_id ?? v.id ?? v) : v;
+    return raw != null ? String(raw) : null;
+  };
+  const attendeeIds = Array.isArray(event?.attendees) ? event.attendees.map(norm).filter(Boolean) : [];
+  const isRegistered = currentUserId ? attendeeIds.includes(String(currentUserId)) : false;
+  const isHostedByYou = currentUserId ? (norm(event?.creator_user_id) === String(currentUserId)) : false;
+  
+  return (
+    <div 
+      className="group relative bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full cursor-pointer"
+    >
+      <div onClick={() => onClick(event)} className="flex justify-between items-start mb-5">
+        <div className="flex gap-4">
+          <div className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl border transition-colors duration-300 shadow-sm bg-indigo-50 border-indigo-100 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white`}>
+            <span className="text-[10px] font-bold uppercase tracking-wider">{month}</span>
+            <span className="text-xl font-bold leading-none mt-0.5">{day}</span>
+          </div>
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border ${
@@ -99,6 +55,9 @@ const EventCard = ({ event, onClick }) => (
             }`}>
               {event.category}
             </span>
+            {isHostedByYou && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-900 text-white">YOU</span>
+            )}
           </div>
           <h3 className="text-lg font-bold text-slate-900 leading-snug group-hover:text-indigo-600 transition-colors">
             {event.title}
@@ -112,52 +71,89 @@ const EventCard = ({ event, onClick }) => (
       </div>
     </div>
     
-    <div className="mb-4">
+    <div onClick={() => onClick(event)} className="mb-4">
       <p className="text-slate-600 text-sm line-clamp-2">{event.description}</p>
     </div>
     
-    <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm text-slate-500 mb-6 flex-1">
+    <div onClick={() => onClick(event)} className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm text-slate-500 mb-6 flex-1">
       <div className="flex items-center gap-2">
         <Clock className="w-4 h-4 text-slate-400" />
-        <span className="truncate">{event.time}</span>
+        <span className="truncate">{event.startTime || 'TBD'} - {event.endTime || 'TBD'}</span>
       </div>
       <div className="flex items-center gap-2">
-        {event.type === 'Online' ? (
+        {event.eventType === 'online' ? (
           <Video className="w-4 h-4 text-slate-400" />
         ) : (
           <MapPin className="w-4 h-4 text-slate-400" />
         )}
-        <span className="truncate">{event.location}</span>
+        <span className="truncate">{event.location || 'Location TBD'}</span>
       </div>
     </div>
     
     <div className="h-px bg-slate-100 w-full mb-4" />
     
     <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
+      <div onClick={() => onClick(event)} className="flex items-center gap-2">
         <div className="flex -space-x-3 overflow-hidden py-1">
-          {event.avatars.slice(0, 3).map((src, index) => (
-            <img 
-              key={index} 
-              className="inline-block h-7 w-7 rounded-full ring-2 ring-white object-cover shadow-sm" 
-              src={src} 
-              alt="Attendee" 
-            />
-          ))}
+          {event.attendees && event.attendees.length > 0 ? (
+            event.attendees.slice(0, 3).map((attendee, index) => (
+              <div
+                key={index}
+                className="h-7 w-7 rounded-full ring-2 ring-white bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600"
+              >
+                {attendee.name ? attendee.name[0].toUpperCase() : 'A'}
+              </div>
+            ))
+          ) : (
+            <div className="h-7 w-7 rounded-full ring-2 ring-white bg-slate-100 flex items-center justify-center">
+              <Users className="w-4 h-4 text-slate-400" />
+            </div>
+          )}
         </div>
-        <span className="text-xs text-slate-500 font-medium">{event.attendees} registered</span>
+        <span className="text-xs text-slate-500 font-medium">
+          {event.attendees ? event.attendees.length : 0} registered
+        </span>
       </div>
       
-      <button className={`flex items-center gap-2 px-4 py-2 text-white text-xs font-semibold rounded-lg transition-all shadow-sm hover:shadow active:scale-95 bg-slate-900 hover:bg-indigo-600`}>
-        Register Now
-        <ArrowUpRight className="w-3.5 h-3.5" />
+      <button 
+        onClick={(e) => {
+          e.stopPropagation();
+          onRegister(event._id);
+        }}
+        disabled={isRegistering || isRegistered}
+        className={`flex items-center gap-2 px-4 py-2 text-white text-xs font-semibold rounded-lg transition-all shadow-sm hover:shadow active:scale-95 ${
+          isRegistered 
+            ? 'bg-green-600 cursor-not-allowed' 
+            : isRegistering 
+              ? 'bg-slate-400 cursor-not-allowed' 
+              : 'bg-slate-900 hover:bg-indigo-600'
+        }`}
+      >
+        {isRegistered ? (
+          <>
+            <span>✓</span>
+            Registered
+          </>
+        ) : isRegistering ? (
+          'Registering...'
+        ) : (
+          <>
+            Register Now
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </>
+        )}
       </button>
     </div>
   </div>
-);
+  );
+};
 
-const EventDetailModal = ({ event, onClose }) => {
+const EventDetailModal = ({ event, onClose, onRegister, isRegistering }) => {
   if (!event) return null;
+
+  const eventDate = event.startDate ? new Date(event.startDate) : new Date();
+  const formattedDate = eventDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const isRegistered = event.attendees && event.attendees.some(a => a._id);
 
   return (
     <div 
@@ -180,7 +176,7 @@ const EventDetailModal = ({ event, onClose }) => {
                 }`}>
                   {event.category}
                 </span>
-                <span className="text-xs text-slate-500">• {event.type}</span>
+                <span className="text-xs text-slate-500">• {event.eventType || 'In-person'}</span>
               </div>
             </div>
             <button
@@ -193,37 +189,37 @@ const EventDetailModal = ({ event, onClose }) => {
           
           <div className="space-y-6">
             {/* Event Image */}
-            <div className="h-48 bg-slate-100 rounded-lg overflow-hidden">
-              <img 
-                src={event.image} 
-                alt={event.title} 
-                className="w-full h-full object-cover"
-              />
-            </div>
+            {event.image && (
+              <div className="h-48 bg-slate-100 rounded-lg overflow-hidden">
+                <img 
+                  src={event.image} 
+                  alt={event.title} 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
 
             {/* Event Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start gap-3">
-                <Calendar className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
+                <Calendar className="w-5 h-5 text-indigo-600 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-slate-500">Date & Time</p>
-                  <p className="text-slate-900 font-medium">
-                    {event.date.month} {event.date.day}, {new Date().getFullYear()}
-                  </p>
-                  <p className="text-slate-600 text-sm">{event.time}</p>
+                  <p className="text-slate-900 font-medium">{formattedDate}</p>
+                  <p className="text-slate-600 text-sm">{event.startTime || 'TBD'} - {event.endTime || 'TBD'}</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
-                {event.type === 'Online' ? (
-                  <Video className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
+                {event.eventType === 'online' ? (
+                  <Video className="w-5 h-5 text-indigo-600 mt-0.5 shrink-0" />
                 ) : (
-                  <MapPin className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
+                  <MapPin className="w-5 h-5 text-indigo-600 mt-0.5 shrink-0" />
                 )}
                 <div>
                   <p className="text-sm text-slate-500">Location</p>
-                  <p className="text-slate-900 font-medium">{event.location}</p>
-                  {event.type === 'Online' && (
+                  <p className="text-slate-900 font-medium">{event.location || 'TBD'}</p>
+                  {event.eventType === 'online' && (
                     <p className="text-indigo-600 text-sm">Link will be shared via email</p>
                   )}
                 </div>
@@ -240,28 +236,46 @@ const EventDetailModal = ({ event, onClose }) => {
 
             {/* Attendees */}
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Attendees ({event.attendees})</h3>
+              <h3 className="text-sm font-semibold text-slate-900 mb-3">
+                Attendees ({event.attendees ? event.attendees.length : 0})
+              </h3>
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-2">
-                  {event.avatars.map((src, i) => (
-                    <img 
-                      key={i} 
-                      src={src} 
-                      alt="Attendee" 
-                      className="w-8 h-8 rounded-full border-2 border-white"
-                    />
-                  ))}
+                  {event.attendees && event.attendees.length > 0 ? (
+                    event.attendees.slice(0, 5).map((attendee, i) => (
+                      <div
+                        key={i}
+                        className="w-8 h-8 rounded-full border-2 border-white bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-600"
+                      >
+                        {attendee.name ? attendee.name[0].toUpperCase() : 'A'}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center">
+                      <Users className="w-4 h-4 text-slate-400" />
+                    </div>
+                  )}
                 </div>
                 <span className="text-sm text-slate-600">
-                  {event.attendees} {event.attendees === 1 ? 'person' : 'people'} registered
+                  {event.attendees ? event.attendees.length : 0} {event.attendees?.length === 1 ? 'person' : 'people'} registered
                 </span>
               </div>
             </div>
           </div>
 
           <div className="mt-6 pt-4 border-t border-slate-100">
-            <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">
-              Register Now
+            <button 
+              onClick={() => onRegister(event._id)}
+              disabled={isRegistering || isRegistered}
+              className={`w-full font-medium py-2.5 px-4 rounded-lg transition-colors ${
+                isRegistered 
+                  ? 'bg-green-600 cursor-not-allowed text-white' 
+                  : isRegistering 
+                    ? 'bg-slate-400 cursor-not-allowed text-white' 
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+              }`}
+            >
+              {isRegistered ? '✓ Registered' : isRegistering ? 'Registering...' : 'Register Now'}
             </button>
           </div>
         </div>
@@ -294,24 +308,136 @@ const EmptyState = ({ type, onClear }) => (
 
 // --- MAIN COMPONENT ---
 const Events = () => {
+  const { auth } = useAuth();
+  // Students come back with `id` while alumni use `_id`, so normalize both
+  const myId = auth?.alumniLoggedIn
+    ? auth?.alumni?._id
+    : auth?.student?._id || auth?.student?.id;
+  const isAlumni = !!auth?.alumniLoggedIn;
   const [activeTab, setActiveTab] = useState('upcoming');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  // Track which event is currently registering to avoid all buttons showing loading state
+  const [registeringId, setRegisteringId] = useState(null);
+
+  // Helpers to normalize IDs that may arrive as strings or nested objects
+  const getId = (val) => {
+    const raw = (val && typeof val === 'object') ? (val._id ?? val.user_id ?? val.id ?? val) : val;
+    return raw != null ? String(raw) : null;
+  };
+  const getCreatorId = (event) => getId(event?.creator_user_id);
+  const getAttendeeIds = (event) => Array.isArray(event?.attendees) ? event.attendees.map(getId).filter(Boolean) : [];
+
+  const normMyId = useMemo(() => (myId ? String(getId(myId)) : null), [myId]);
   
-  // Get categories from events
-  const categories = ['All', ...new Set(INITIAL_EVENTS.map(event => event.category))];
+  // Fetch events from API
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/events');
+        const data = await response.json();
+        if (data.ok) {
+          setEvents(data.events || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch events:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchEvents();
+  }, []);
+  
+  // Handle event registration
+  const handleRegister = async (eventId) => {
+    const normalizedId = String(eventId);
+    if (registeringId === normalizedId) return;
+    
+    try {
+      setRegisteringId(normalizedId);
+      const response = await fetch(`/api/events/${eventId}/attend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      
+      const data = await response.json();
+      
+      if (data.ok) {
+        // Update the events list with the updated event data
+        setEvents(prevEvents => prevEvents.map(e => (getId(e?._id) === String(eventId) ? data.event : e)));
+        
+        // Update selected event if it's the modal
+        if (selectedEvent && selectedEvent._id === eventId) {
+          setSelectedEvent(data.event);
+        }
+        
+        // Show success message
+        alert('Successfully registered for the event! The organizer has been notified.');
+      } else {
+        alert(data.error || 'Failed to register for event');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('Failed to register for event. Please try again.');
+    } finally {
+      setRegisteringId(null);
+    }
+  };
+  
+  // Deduplicate events by _id and prefer the variant with populated attendees
+  const uniqueEvents = useMemo(() => {
+    const map = new Map();
+    for (const e of events) {
+      const id = getId(e?._id || e?.id);
+      if (!id) continue;
+      if (!map.has(id)) {
+        map.set(id, e);
+      } else {
+        const prev = map.get(id);
+        const prevAtt = getAttendeeIds(prev).length;
+        const currAtt = getAttendeeIds(e).length;
+        map.set(id, currAtt >= prevAtt ? { ...prev, ...e } : prev);
+      }
+    }
+    return Array.from(map.values());
+  }, [events]);
+
+  // Get categories - combine default categories with any dynamic ones from events
+  const defaultCategories = ['All', 'Networking', 'Workshop', 'Conference', 'Webinar'];
+  const eventCategories = new Set(uniqueEvents.map(event => event.category).filter(Boolean));
+  const categories = ['All', ...new Set([
+    'Networking', 'Workshop', 'Conference', 'Webinar',
+    ...eventCategories
+  ].filter(c => c !== 'All'))];
   
   // Filter events based on active tab, search query, and category
-  const filteredEvents = INITIAL_EVENTS.filter(event => {
-    // Check if event matches the active tab
-    const matchesTab = activeTab === 'upcoming' 
-      ? (event.status === 'upcoming' || !event.status)  // Include events with no status as upcoming
-      : event.status === 'registered';
-    
+  const filteredEvents = uniqueEvents.filter(event => {
+    // Interpret "My Events" tab differently for alumni vs students
+    let matchesTab = true;
+    if (activeTab === 'registered') {
+      if (isAlumni) {
+        // Hosted by me (avoid showing events from other alumni)
+        const creatorId = getCreatorId(event);
+        matchesTab = creatorId && normMyId ? creatorId === normMyId : false;
+      } else {
+        // Registered by me (student)
+        const attendeeIds = getAttendeeIds(event);
+        matchesTab = normMyId ? attendeeIds.includes(normMyId) : false;
+      }
+    } else {
+      // Upcoming/default tab: show all unique events
+      matchesTab = true;
+    }
+
     // Check if event matches search query
     const matchesSearch = searchQuery === '' || 
-      event.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      event.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
       (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase()));
     
     // Check if event matches selected category
@@ -321,8 +447,32 @@ const Events = () => {
   });
 
   // Count events for tabs
-  const upcomingCount = INITIAL_EVENTS.filter(e => e.status === 'upcoming' || !e.status).length;
-  const registeredCount = INITIAL_EVENTS.filter(e => e.status === 'registered').length;
+  const upcomingCount = uniqueEvents.length;
+  const registeredCount = useMemo(() => {
+    if (isAlumni) {
+      // Hosted by me
+      return uniqueEvents.filter(e => {
+        const creatorId = getCreatorId(e);
+        return creatorId && normMyId ? creatorId === normMyId : false;
+      }).length;
+    }
+    // Registered by me (student)
+    return uniqueEvents.filter(e => getAttendeeIds(e).includes(normMyId)).length;
+  }, [uniqueEvents, isAlumni, normMyId]);
+
+  // Final render list: ensure absolutely no duplicate ids make it to the DOM
+  const renderEvents = useMemo(() => {
+    const seen = new Set();
+    const out = [];
+    for (const e of filteredEvents) {
+      const id = e?._id || e?.id;
+      if (!id) continue;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      out.push(e);
+    }
+    return out;
+  }, [filteredEvents]);
 
   return (
     <div className="w-full min-h-screen bg-slate-50/50 relative">
@@ -394,15 +544,28 @@ const Events = () => {
         </div>
 
         {/* Events Grid */}
-        {filteredEvents.length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="text-center">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+              <p className="mt-4 text-slate-500">Loading events...</p>
+            </div>
+          </div>
+        ) : renderEvents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEvents.map(event => (
+            {renderEvents.map((event) => {
+              const eventId = getId(event._id) || getId(event.id);
+              return (
               <EventCard 
-                key={event.id} 
+                    key={eventId} 
                 event={event}
                 onClick={(event) => setSelectedEvent(event)}
+                onRegister={handleRegister}
+                    isRegistering={registeringId === String(eventId)}
+                currentUserId={normMyId}
               />
-            ))}
+              );
+            })}
           </div>
         ) : (
           <EmptyState 
@@ -419,7 +582,9 @@ const Events = () => {
       {selectedEvent && (
         <EventDetailModal 
           event={selectedEvent} 
-          onClose={() => setSelectedEvent(null)} 
+          onClose={() => setSelectedEvent(null)}
+          onRegister={handleRegister}
+          isRegistering={registeringId === String(getId(selectedEvent._id) || getId(selectedEvent.id))}
         />
       )}
     </div>

@@ -69,6 +69,23 @@ export const loginValidator = [
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters long"),
 ];
+
+// ======================
+// ADMIN LOGIN VALIDATOR
+// ======================
+export const adminLoginValidator = [
+  body("email")
+    .trim()
+    .notEmpty().withMessage("Email is required")
+    .bail()
+    .custom((value) => strictEmailRegex.test(value))
+    .withMessage("Enter a valid email address"),
+
+  body("password")
+    .notEmpty().withMessage("Password is required")
+    .isLength({ min: 5 })
+    .withMessage("Password must be at least 5 characters long"),
+];
 // STUDENT LOGIN VALIDATION
 export const studentLoginValidation = [
   body("regNo")

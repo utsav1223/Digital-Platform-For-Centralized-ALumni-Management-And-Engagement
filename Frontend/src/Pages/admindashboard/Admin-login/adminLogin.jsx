@@ -16,32 +16,73 @@ const AdminLogin = () => {
   const bgImage =
     "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920&auto=format&fit=crop";
 
-  const handleSubmit = (e) => {
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+  //   setError('');
+  //   setIsLoading(true);
+
+  //   // Simulate an async auth call
+  //   setTimeout(() => {
+  //     const ok = formData.email.includes('@') && formData.password.length > 4;
+
+  //     if (ok) {
+  //       // Set a short-lived client token and the compatibility flag
+  //       const token = {
+  //         value: 'admintoken-' + Math.random().toString(36).slice(2),
+  //         expiry: Date.now() + 1000 * 60 * 60 // 1 hour
+  //       };
+  //       localStorage.setItem('admin_token', JSON.stringify(token));
+
+  //       // Replace history so user can't go back to login with back button
+  //       navigate('/admin/dashboard', { replace: true });
+
+  //       // No need to setIsLoading(false) if you navigate away immediately.
+  //     } else {
+  //       setError('Invalid credentials. Try email: admin@edu and pass: 12345');
+  //       setIsLoading(false);
+  //     }
+  //   }, 1200);
+  // };
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Simulate an async auth call
-    setTimeout(() => {
-      const ok = formData.email.includes('@') && formData.password.length > 4;
+    try {
+      const res = await fetch("http://localhost:8000/api/admin/login", {
+        method: "POST",
+        credentials: "include", // 🔥 VERY IMPORTANT
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-      if (ok) {
-        // Set a short-lived client token and the compatibility flag
-        const token = {
-          value: 'admintoken-' + Math.random().toString(36).slice(2),
-          expiry: Date.now() + 1000 * 60 * 60 // 1 hour
-        };
-        localStorage.setItem('admin_token', JSON.stringify(token));
+      const data = await res.json();
 
-        // Replace history so user can't go back to login with back button
-        navigate('/admin/dashboard', { replace: true });
-
-        // No need to setIsLoading(false) if you navigate away immediately.
-      } else {
-        setError('Invalid credentials. Try email: admin@edu and pass: 12345');
+      if (!res.ok) {
+        setError(data.message || "Login failed");
         setIsLoading(false);
+        return;
       }
-    }, 1200);
+
+      // Optional UI token (dashboard guard only)
+      localStorage.setItem(
+        "admin_token",
+        JSON.stringify({
+          value: "server-auth",
+          expiry: Date.now() + 1000 * 60 * 60,
+        })
+      );
+      localStorage.setItem("isAdminLoggedIn", "true");
+
+      navigate("/admin/dashboard", { replace: true });
+
+    } catch (err) {
+      console.error(err);
+      setError("Server error. Try again.");
+      setIsLoading(false);
+    }
   };
 
   return (

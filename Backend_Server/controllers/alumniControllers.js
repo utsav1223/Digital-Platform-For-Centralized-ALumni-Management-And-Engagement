@@ -629,3 +629,49 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+/* ------------------------------
+   ADMIN LOGIN
+--------------------------------*/
+export const loginAdmin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    console.log('🔐 Admin login attempt:', email);
+    
+    // Simple hardcoded admin credentials for now
+    // In production, store this in a separate Admin model
+    // Must include a valid domain to pass email validation
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@edu.com";
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "12345";
+    
+    if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+      console.log('❌ Invalid admin credentials');
+      return res.status(401).json({ ok: false, message: "Invalid admin credentials" });
+    }
+    
+    // Clear other roles
+    req.session.alumniId = null;
+    req.session.studentId = null;
+    
+    // Set admin session
+    req.session.adminId = "admin";
+    req.session.role = "admin";
+    
+    console.log('✅ Admin logged in, session set:', { adminId: req.session.adminId, role: req.session.role });
+    
+    res.json({
+      ok: true,
+      message: "Admin login successful",
+      admin: {
+        email: ADMIN_EMAIL,
+        role: "admin"
+      }
+    });
+    
+  } catch (error) {
+    console.error("Admin Login Error:", error);
+    res.status(500).json({ ok: false, message: "Server error" });
+  }
+};
+

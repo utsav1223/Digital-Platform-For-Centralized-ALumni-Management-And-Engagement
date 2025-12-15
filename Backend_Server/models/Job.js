@@ -2,28 +2,84 @@ import mongoose from "mongoose";
 
 const jobSchema = new mongoose.Schema(
   {
-    alumniId: { type: mongoose.Schema.Types.ObjectId, ref: "Alumni", required: true },
-
+    // Job Info
     title: { type: String, required: true },
     company: { type: String, required: true },
-    location: { type: String, required: true },
+    location: String,
+    type: String,
+    workMode: String,
 
-    category: { type: String, enum: ["Job", "Internship"], required: true },
-    type: { type: String, required: true },  // Full-time, Internship, Contract, etc.
+    // UI helpers
+    logoColor: String, // 🟢 used in UI avatar
 
-    salary: { type: String, default: "" },
-    description: { type: String, default: "" },
-    skills: { type: [String], default: [] },
+    // Description
+    description: String,
+    responsibilities: [String],
 
-    status: {
-      type: String,
-      enum: ["Pending", "Approved", "Rejected"],
-      default: "Pending",
+    // Skills
+    skills: {
+      required: [String],
+      preferred: [String],
     },
 
-    applicants: { type: Number, default: 0 },
+    // Candidate criteria
+    experienceLevel: String,
+    education: String,
+    finalYearAllowed: Boolean,
+
+    // Salary & benefits
+    salary: String,
+    salaryType: {
+      type: String,
+      enum: ["CTC", "Stipend", "Hourly"],
+      default: "CTC",
+    },
+    benefits: [String],
+
+    // Application details
+    deadline: Date,
+    openings: {
+      type: Number,
+      default: 1,
+    },
+
+    applyMethod: {
+      type: String,
+      enum: ["Platform", "External"],
+      default: "Platform",
+    },
+
+    externalLink: String,
+
+    jobEmail: {
+      type: String, // 🟢 HR email (important)
+    },
+
+    requiredDocs: [String],
+
+    // Alumni (who posted)
+    postedBy: {
+      alumniId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Alumni",
+      },
+      name: String,
+      company: String, // 🟢 used in modal
+      batch: String,
+      department: String,
+      role: String,
+      linkedin: String,
+      showContact: Boolean,
+    },
+
+    // Admin approval
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
   },
-  { timestamps: true}
+  { timestamps: true }
 );
 
 export default mongoose.model("Job", jobSchema);

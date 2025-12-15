@@ -1,53 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar, MapPin, Video, Users, 
   ChevronRight, Clock, ArrowUpRight, 
   Filter, Search, MoreHorizontal, Plus, X, 
-  Sparkles, Bell, AlignLeft, Tag 
+  Sparkles, Bell, AlignLeft, Tag, Trash2 
 } from 'lucide-react';
-
-// --- MOCK DATA ---
-const INITIAL_EVENTS = [
-  {
-    id: 1,
-    title: "SaaS Founders Meetup 2024",
-    category: "Networking",
-    type: "In-person",
-    location: "San Francisco, CA",
-    date: { month: "OCT", day: "24" },
-    startDate: "2024-10-24",
-    endDate: "2024-10-24",
-    time: "6:00 PM - 9:00 PM",
-    description: "Join over 100+ SaaS founders for an evening of networking, insights, and pizza. We will have guest speakers from YC and Techstars discussing the current fundraising climate.",
-    attendees: 142,
-    avatars: [
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100",
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100",
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100"
-    ],
-    status: "upcoming",
-    isHostedByMe: false
-  },
-  {
-    id: 2,
-    title: "Advanced React Patterns Workshop",
-    category: "Workshop",
-    type: "Online",
-    location: "Google Meet",
-    date: { month: "NOV", day: "02" },
-    startDate: "2024-11-02",
-    endDate: "2024-11-02",
-    time: "10:00 AM - 2:00 PM",
-    description: "Deep dive into Compound Components, Render Props, and Custom Hooks. This 4-hour workshop is designed for developers who want to scale their React architecture.",
-    attendees: 850,
-    avatars: [
-      "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=100",
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100"
-    ],
-    status: "upcoming",
-    isHostedByMe: false
-  }
-];
+import { getAllEvents, createEvent, registerForEvent, unregisterFromEvent, deleteEvent } from '../../api/eventAPI';
+import { useAuth } from '../../context/authContext.jsx';
 
 // --- HELPER: Format Time ---
 const formatTime12h = (time24h) => {
@@ -60,8 +19,12 @@ const formatTime12h = (time24h) => {
 };
 
 export default function EventsPage() {
+  const { auth } = useAuth();
+  const myAlumniId = auth?.alumniLoggedIn ? String(auth.alumni?.id || auth.alumni?._id) : null;
   const [activeTab, setActiveTab] = useState('upcoming');
-  const [events, setEvents] = useState(INITIAL_EVENTS);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // --- Category Filter State ---
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -84,44 +47,247 @@ export default function EventsPage() {
     description: ''
   });
 
-  // --- Filter Logic ---
-  const filteredEvents = events.filter(event => {
-    // 1. Tab Filter
-    const matchesTab = activeTab === 'hosted' 
-      ? event.isHostedByMe 
-      : (event.status === activeTab && !event.isHostedByMe);
-    
-    // 2. Category Filter
-    const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory;
+  // Fetch events from backend
+  useEffect(() => {
+    fetchEvents();
+  }, []);
 
-    return matchesTab && matchesCategory;
-  });
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching events from backend...');
+      const response = await getAllEvents();
+      console.log('Events response:', response.data);
+      if (response.data.ok) {
+        // Transform backend data to match frontend structure
+        const transformedEvents = response.data.events.map(event => ({
+          id: event._id,
+          title: event.title,
+          category: event.category || 'Networking',
+          type: event.type || 'Online',
+          location: event.location,
+          date: parseEventDate(event.startDate),
+          startDate: event.startDate,
+          endDate: event.endDate,
+          time: formatEventTime(event.startTime, event.endTime),
+          description: event.description,
+          attendees: event.attendees?.length || 0,
+          avatars: generateAvatars(event.attendees?.length || 0),
+          status: event.status === 'accepted' ? 'upcoming' : event.status,
+          isHostedByMe: checkIfHostedByMe(event),
+          creator_user_id: event.creator_user_id,
+          rawEvent: event
+        }));
+        console.log('Transformed events:', transformedEvents);
+        
+        // Dedupe by event id (normalize to string for comparison)
+        const uniqueEventsMap = new Map();
+        for (const ev of transformedEvents) {
+          const key = getId(ev.id);
+          if (!uniqueEventsMap.has(key)) {
+            uniqueEventsMap.set(key, ev);
+          }
+        }
+        const uniqueEvents = Array.from(uniqueEventsMap.values());
+        console.log('After dedupe:', uniqueEvents);
+        setEvents(uniqueEvents);
+      }
+    } catch (err) {
+      console.error('Error fetching events:', err);
+      console.error('Error details:', err.response?.data);
+      setError('Failed to load events');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleCreateEvent = (e) => {
-    e.preventDefault();
-    const dateObj = new Date(formData.startDate);
-    const month = dateObj.toLocaleString('default', { month: 'short' }).toUpperCase();
-    const day = dateObj.getDate();
-    const timeDisplay = `${formatTime12h(formData.startTime)} - ${formatTime12h(formData.endTime)}`;
-
-    const newEvent = {
-      id: Date.now(),
-      ...formData,
-      date: { month, day },
-      time: timeDisplay,
-      attendees: 1,
-      avatars: ["https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=100"],
-      status: "upcoming",
-      isHostedByMe: true
+  // Helper: Parse date to get month and day
+  const parseEventDate = (dateString) => {
+    if (!dateString) return { month: 'TBD', day: '?' };
+    const date = new Date(dateString);
+    return {
+      month: date.toLocaleString('default', { month: 'short' }).toUpperCase(),
+      day: date.getDate()
     };
+  };
 
-    setEvents([newEvent, ...events]);
-    setIsHostModalOpen(false);
-    setActiveTab('hosted'); 
-    setFormData({ 
-      title: '', category: 'Networking', type: 'Online', 
-      startDate: '', endDate: '', startTime: '', endTime: '', location: '', description: ''
+  // Helper: Format time range
+  const formatEventTime = (startTime, endTime) => {
+    if (!startTime || !endTime) return 'Time TBD';
+    return `${formatTime12h(startTime)} - ${formatTime12h(endTime)}`;
+  };
+
+  // Helper: Generate placeholder avatars
+  const generateAvatars = (count) => {
+    const avatars = [
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100",
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100",
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100"
+    ];
+    return avatars.slice(0, Math.min(count, 3));
+  };
+
+  // Helper: Normalize ID to string for consistent comparison
+  const getId = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    return String(val._id || val.user_id || val.id || val);
+  };
+
+  // Helper: Get creator ID from event
+  const getCreatorId = (event) => {
+    const creator = event?.creator_user_id;
+    if (!creator) return '';
+    return getId(creator);
+  };
+
+  // Normalize myAlumniId for consistent comparison
+  const normMyId = myAlumniId ? String(myAlumniId) : '';
+
+  // Helper: Check if current user is the event creator (with normalization)
+  const checkIfHostedByMe = (event) => {
+    const creatorId = getCreatorId(event);
+    return !!(normMyId && creatorId && creatorId === normMyId);
+  };
+
+  // --- Filter Logic with useMemo ---
+  const filteredEvents = useMemo(() => {
+    return events.filter(event => {
+      // 1. Tab Filter
+      const matchesTab = activeTab === 'hosted' 
+        ? event.isHostedByMe 
+        : (event.status === activeTab && !event.isHostedByMe);
+      
+      // 2. Category Filter
+      const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory;
+
+      return matchesTab && matchesCategory;
     });
+  }, [events, activeTab, selectedCategory]);
+
+  // Final render list with dedupe (Set-based)
+  const renderEvents = useMemo(() => {
+    const seen = new Set();
+    return filteredEvents.filter(event => {
+      const key = getId(event.id);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [filteredEvents]);
+
+  const handleCreateEvent = async (e) => {
+    e.preventDefault();
+    
+    try {
+      console.log('📝 Starting event creation...');
+      console.log('📝 Form data:', formData);
+      
+      const eventPayload = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        type: formData.type,
+        location: formData.type === 'Online' ? formData.location : formData.location,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        is_online: formData.type === 'Online',
+        link: formData.type === 'Online' ? formData.location : null
+      };
+
+      console.log('📤 Sending event payload:', eventPayload);
+      const response = await createEvent(eventPayload);
+      console.log('✅ Response received:', response.data);
+      
+      if (response.data.ok) {
+        // Refresh events list
+        await fetchEvents();
+        setIsHostModalOpen(false);
+        setActiveTab('hosted');
+        setFormData({ 
+          title: '', category: 'Networking', type: 'Online', 
+          startDate: '', endDate: '', startTime: '', endTime: '', location: '', description: ''
+        });
+        alert('Event created successfully! It is pending admin approval.');
+      } else {
+        throw new Error(response.data.error || 'Failed to create event');
+      }
+    } catch (err) {
+      console.error('❌ Error creating event:', err);
+      console.error('❌ Error response:', err.response);
+      console.error('❌ Error status:', err.response?.status);
+      console.error('❌ Error data:', err.response?.data);
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to create event. Please try again.';
+      alert(`Error: ${errorMessage}`);
+    }
+  };
+
+  // Handle event registration
+  const handleRegisterForEvent = async (eventId) => {
+    try {
+      console.log('📝 Registering for event:', eventId);
+      const response = await registerForEvent(eventId);
+      console.log('✅ Registration response:', response.data);
+      
+      if (response.data.ok) {
+        // Update the events list with the registered event
+        setEvents(prevEvents => prevEvents.map(ev => 
+          getId(ev.id) === getId(eventId) ? {
+            ...ev,
+            attendees: response.data.event.attendees?.length || 0,
+            avatars: generateAvatars(response.data.event.attendees?.length || 0)
+          } : ev
+        ));
+        
+        // Update selected event if it's the one being registered for
+        if (selectedEvent && getId(selectedEvent.id) === getId(eventId)) {
+          setSelectedEvent({
+            ...selectedEvent,
+            attendees: response.data.event.attendees?.length || 0,
+            avatars: generateAvatars(response.data.event.attendees?.length || 0)
+          });
+        }
+        
+        alert('✅ Registration successful! Check your email for confirmation.');
+      } else {
+        alert('❌ ' + (response.data.error || 'Failed to register for event'));
+      }
+    } catch (err) {
+      console.error('❌ Error registering for event:', err);
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to register. Please try again.';
+      alert(`❌ Error: ${errorMessage}`);
+    }
+  };
+
+  // Handle event deletion
+  const handleDeleteEvent = async (eventId) => {
+    if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting event:', eventId);
+      const response = await deleteEvent(eventId);
+      console.log('✅ Delete response:', response.data);
+      
+      if (response.data.ok) {
+        // Remove the event from the events list
+        setEvents(prevEvents => prevEvents.filter(ev => getId(ev.id) !== getId(eventId)));
+        
+        // Close the modal
+        setSelectedEvent(null);
+        
+        alert('✅ Event deleted successfully!');
+      } else {
+        alert('❌ ' + (response.data.error || 'Failed to delete event'));
+      }
+    } catch (err) {
+      console.error('❌ Error deleting event:', err);
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to delete event. Please try again.';
+      alert(`❌ Error: ${errorMessage}`);
+    }
   };
 
   return (
@@ -151,69 +317,89 @@ export default function EventsPage() {
           </div>
         </div>
 
-        {/* --- TABS --- */}
-        <div className="border-b border-slate-200 mb-6">
-            <div className="flex gap-8 overflow-x-auto no-scrollbar">
-                <TabLink label="Upcoming" count={events.filter(e => e.status === 'upcoming' && !e.isHostedByMe).length} active={activeTab === 'upcoming'} onClick={() => setActiveTab('upcoming')} />
-                <TabLink label="Past" active={activeTab === 'past'} onClick={() => setActiveTab('past')} />
-                <TabLink label="My Hosted Events" count={events.filter(e => e.isHostedByMe).length} active={activeTab === 'hosted'} onClick={() => setActiveTab('hosted')} isSpecial />
+        {/* --- LOADING STATE --- */}
+        {loading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          </div>
+        )}
+
+        {/* --- ERROR STATE --- */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
+            {error}
+          </div>
+        )}
+
+        {/* --- MAIN CONTENT --- */}
+        {!loading && !error && (
+          <>
+            {/* --- TABS --- */}
+            <div className="border-b border-slate-200 mb-6">
+                <div className="flex gap-8 overflow-x-auto no-scrollbar">
+                    <TabLink label="Upcoming" count={events.filter(e => e.status === 'upcoming' && !e.isHostedByMe).length} active={activeTab === 'upcoming'} onClick={() => setActiveTab('upcoming')} />
+                    <TabLink label="Past" active={activeTab === 'past'} onClick={() => setActiveTab('past')} />
+                    <TabLink label="My Hosted Events" count={events.filter(e => e.isHostedByMe).length} active={activeTab === 'hosted'} onClick={() => setActiveTab('hosted')} isSpecial />
+                </div>
             </div>
-        </div>
 
-        {/* --- UPDATED: CATEGORY FILTER BAR WITH FUNCTIONAL RESET --- */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-6 scrollbar-hide">
-          
-          {/* Functional Reset Button */}
-          <button 
-            onClick={() => setSelectedCategory('All')}
-            className={`
-              flex items-center justify-center w-8 h-8 rounded-full mr-2 shrink-0 transition-all border shadow-sm
-              ${selectedCategory !== 'All' 
-                ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100 cursor-pointer' 
-                : 'bg-white text-slate-400 border-slate-200 cursor-default'}
-            `}
-            title={selectedCategory !== 'All' ? "Clear Filter" : "Filter"}
-          >
-             {selectedCategory !== 'All' ? <X size={14} /> : <Filter size={14} />}
-          </button>
+            {/* --- UPDATED: CATEGORY FILTER BAR WITH FUNCTIONAL RESET --- */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-6 scrollbar-hide">
+              
+              {/* Functional Reset Button */}
+              <button 
+                onClick={() => setSelectedCategory('All')}
+                className={`
+                  flex items-center justify-center w-8 h-8 rounded-full mr-2 shrink-0 transition-all border shadow-sm
+                  ${selectedCategory !== 'All' 
+                    ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100 cursor-pointer' 
+                    : 'bg-white text-slate-400 border-slate-200 cursor-default'}
+                `}
+                title={selectedCategory !== 'All' ? "Clear Filter" : "Filter"}
+              >
+                 {selectedCategory !== 'All' ? <X size={14} /> : <Filter size={14} />}
+              </button>
 
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`
-                px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border
-                ${selectedCategory === cat 
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-md' 
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}
-              `}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`
+                    px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border
+                    ${selectedCategory === cat 
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-md' 
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}
+                  `}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
 
-        {/* --- CONTENT GRID --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {activeTab === 'hosted' && (
-             <HostEventCard onClick={() => setIsHostModalOpen(true)} />
-          )}
-          {filteredEvents.length > 0 ? (
-            filteredEvents.map(event => (
-              <EventCard 
-                key={event.id} 
-                event={event} 
-                onClick={() => setSelectedEvent(event)} 
-              />
-            ))
-          ) : (
-            activeTab !== 'hosted' && (
-               <div className="col-span-full">
-                  <EmptyState type={activeTab} onClear={() => setSelectedCategory('All')} />
-               </div>
-            )
-          )}
-        </div>
+            {/* --- CONTENT GRID --- */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {activeTab === 'hosted' && (
+                 <HostEventCard onClick={() => setIsHostModalOpen(true)} />
+              )}
+              {renderEvents.length > 0 ? (
+                renderEvents.map(event => (
+                  <EventCard 
+                    key={getId(event.id)} 
+                    event={event} 
+                    onClick={() => setSelectedEvent(event)} 
+                    onRegister={handleRegisterForEvent}
+                  />
+                ))
+              ) : (
+                activeTab !== 'hosted' && (
+                   <div className="col-span-full">
+                      <EmptyState type={activeTab} onClear={() => setSelectedCategory('All')} />
+                   </div>
+                )
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* --- HOST EVENT MODAL --- */}
@@ -403,10 +589,33 @@ export default function EventsPage() {
                  <button onClick={() => setSelectedEvent(null)} className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition">
                     Close
                  </button>
-                 <button className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition flex items-center gap-2">
-                    {selectedEvent.isHostedByMe ? 'Edit Event' : 'Register Now'}
-                    <ArrowUpRight size={16} />
-                 </button>
+                 {selectedEvent.isHostedByMe ? (
+                    <div className="flex gap-2">
+                       <button className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-sm hover:bg-purple-700 shadow-lg shadow-purple-200 transition flex items-center gap-2">
+                          Edit Event
+                          <ArrowUpRight size={16} />
+                       </button>
+                       <button 
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           handleDeleteEvent(selectedEvent.id);
+                         }}
+                         className="px-5 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 shadow-lg shadow-red-200 transition flex items-center gap-2">
+                          Delete Event
+                          <Trash2 size={16} />
+                       </button>
+                    </div>
+                 ) : (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRegisterForEvent(selectedEvent.id);
+                      }}
+                      className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition flex items-center gap-2">
+                       Register Now
+                       <ArrowUpRight size={16} />
+                    </button>
+                 )}
               </div>
            </div>
         </div>
@@ -437,7 +646,7 @@ const TabLink = ({ active, onClick, label, count, isSpecial }) => (
   </button>
 );
 
-const EventCard = ({ event, onClick }) => (
+const EventCard = ({ event, onClick, onRegister }) => (
   <div onClick={onClick} className="group relative bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full cursor-pointer">
     <div className="flex justify-between items-start mb-5">
       <div className="flex gap-4">
@@ -464,7 +673,26 @@ const EventCard = ({ event, onClick }) => (
     <div className="h-px bg-slate-100 w-full mb-4" />
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2"><AvatarStack avatars={event.avatars} count={event.attendees} /><span className="text-xs text-slate-500 font-medium">{event.attendees} registered</span></div>
-      {event.status === 'upcoming' ? (<button className={`flex items-center gap-2 px-4 py-2 text-white text-xs font-semibold rounded-lg transition-all shadow-sm hover:shadow active:scale-95 ${event.isHostedByMe ? 'bg-purple-600 hover:bg-purple-700' : 'bg-slate-900 hover:bg-indigo-600'}`}>{event.isHostedByMe ? 'Manage' : 'View Details'}<ArrowUpRight className="w-3.5 h-3.5" /></button>) : (<button className="px-4 py-2 bg-slate-50 text-slate-400 text-xs font-semibold rounded-lg cursor-not-allowed border border-slate-100">Event Ended</button>)}
+      {event.status === 'upcoming' ? (
+        event.isHostedByMe ? (
+          <button className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg transition-all shadow-sm hover:shadow active:scale-95">
+            Manage
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </button>
+        ) : (
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onRegister?.(event.id);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-all shadow-sm hover:shadow active:scale-95">
+            Register
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </button>
+        )
+      ) : (
+        <button className="px-4 py-2 bg-slate-50 text-slate-400 text-xs font-semibold rounded-lg cursor-not-allowed border border-slate-100">Event Ended</button>
+      )}
     </div>
   </div>
 );

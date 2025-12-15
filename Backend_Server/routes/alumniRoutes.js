@@ -2,6 +2,7 @@ import express from "express";
 import {
   registerAlumni,
   loginAlumni,
+  loginAdmin,
   logoutAlumni,
   getLoggedInAlumni,
   getProfile,
@@ -16,6 +17,7 @@ import { validate } from "../middleware/validate.js";
 import {
   registerValidator,
   loginValidator,
+  adminLoginValidator,
   forgotPasswordValidator,
   resetPasswordValidator,
 } from "../middleware/validator.js";
@@ -27,6 +29,7 @@ const router = express.Router();
 /* ---------- AUTH ---------- */
 router.post("/register", registerValidator, validate, registerAlumni);
 router.post("/login", loginValidator, validate, loginAlumni);
+router.post("/admin-login", adminLoginValidator, validate, loginAdmin);
 router.post("/logout", logoutAlumni);
 
 /* ---------- SESSION CHECK (ALUMNI ONLY) ---------- */

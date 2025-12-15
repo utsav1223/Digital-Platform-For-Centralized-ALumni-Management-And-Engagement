@@ -23,3 +23,12 @@ export const requireAlumniLogin = (req, res, next) => {
   }
   next();
 };
+
+
+
+export const requireAdminLogin = (req, res, next) => {
+  if (!req.session.adminId || req.session.role !== "admin") {
+    return res.status(401).json({ message: "Admin login required" });
+  }
+  next();
+};

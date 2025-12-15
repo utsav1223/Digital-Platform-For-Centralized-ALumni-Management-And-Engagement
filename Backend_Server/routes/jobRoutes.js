@@ -1,15 +1,38 @@
 import express from "express";
-import { createJob, updateJobStatus, getMyJobs, getApprovedJobs } from "../controllers/jobControllers.js";
-
+import {
+  createJob,
+  getAlumniJobs,
+  deleteJob
+} from "../controllers/jobController.js";
+import {
+  getPendingJobs,
+  updateJobStatus,
+} from "../controllers/adminJobController.js";
+import { getApprovedJobs } from "../controllers/jobController.js";
+import { requireAlumniLogin,requireAdminLogin, requireStudentLogin } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
-router.post("/create", createJob);
+// Alumni
+router.post("/create", requireAlumniLogin, createJob);
+router.get("/alumni", requireAlumniLogin, getAlumniJobs);
 
-router.get("/my-jobs", getMyJobs);
+// Admin
+// router.get("/admin/pending", getPendingJobs);
+// router.put("/admin/status", updateJobStatus);
 
+// Student
 router.get("/approved", getApprovedJobs);
 
-// Only admin uses this:
-router.put("/status/:jobId", updateJobStatus);
+// Admin
+// router.get("/admin/pending", requireAdminLogin, getPendingJobs);
+// router.put("/admin/status", requireAdminLogin, updateJobStatus);
+
+// ❌ REMOVE requireAdminLogin
+router.get("/admin/pending", getPendingJobs);
+router.put("/admin/status", updateJobStatus);
+
+
+// 🟢 DELETE JOB
+router.delete("/:id", deleteJob);
 
 export default router;

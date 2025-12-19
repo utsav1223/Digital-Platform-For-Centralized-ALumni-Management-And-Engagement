@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { 
-  Mail, 
-  MapPin, 
-  Send, 
-  Loader2, 
-  CheckCircle, 
-  ArrowRight, 
-  User, 
+import {
+  Mail,
+  MapPin,
+  Send,
+  Loader2,
+  CheckCircle,
+  ArrowRight,
+  User,
   MessageSquare,
   Quote
 } from 'lucide-react';
@@ -39,8 +39,34 @@ export default function Contact() {
     }
   };
 
-  const handleSubmit = (e) => {
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+  //   const newErrors = {};
+  //   if (!validateEmail(form.email)) newErrors.email = "Invalid email address";
+  //   if (!form.name) newErrors.name = "Full name is required";
+  //   if (!form.role) newErrors.role = "Please select a role";
+  //   if (!form.message) newErrors.message = "Message cannot be empty";
+
+  //   if (Object.keys(newErrors).length > 0) {
+  //     setErrors(newErrors);
+  //     return;
+  //   }
+
+  //   setStatus("loading");
+  //   setTimeout(() => {
+  //     setStatus("success");
+  //     setTimeout(() => {
+  //       setStatus("idle");
+  //       setForm({ name: "", email: "", role: "", message: "" });
+  //       setErrors({});
+  //     }, 3000);
+  //   }, 1500);
+  // };
+
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     const newErrors = {};
     if (!validateEmail(form.email)) newErrors.email = "Invalid email address";
     if (!form.name) newErrors.name = "Full name is required";
@@ -52,35 +78,49 @@ export default function Contact() {
       return;
     }
 
-    setStatus("loading");
-    setTimeout(() => {
+    try {
+      setStatus("loading");
+
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/contact`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message);
+
       setStatus("success");
-      setTimeout(() => {
-        setStatus("idle");
-        setForm({ name: "", email: "", role: "", message: "" });
-        setErrors({});
-      }, 3000);
-    }, 1500);
+      setForm({ name: "", email: "", role: "", message: "" });
+      setErrors({});
+    } catch (err) {
+      alert(err.message || "Something went wrong");
+      setStatus("idle");
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 lg:p-8 bg-slate-50 relative">
-      
+
       {/* --- BACKGROUND PATTERN --- */}
-      <div className="absolute inset-0 z-0 opacity-40 pointer-events-none" 
-           style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
+      <div className="absolute inset-0 z-0 opacity-40 pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
       </div>
 
       <div className="w-full max-w-6xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row relative z-10 min-h-[650px] border border-slate-100">
-        
+
         {/* --- LEFT SIDE: VISUAL & TRUST --- */}
         <div className="w-full md:w-5/12 lg:w-1/2 relative flex flex-col justify-between p-10 lg:p-12 text-white bg-slate-900">
-          
+
           {/* Background Image with Overlay */}
           <div className="absolute inset-0 z-0">
-            <img 
-              src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2000&auto=format&fit=crop" 
-              alt="Background" 
+            <img
+              src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2000&auto=format&fit=crop"
+              alt="Background"
               className="w-full h-full object-cover opacity-40 mix-blend-overlay"
             />
             <div className="absolute inset-0 bg-gradient-to-br from-blue-900/90 via-slate-900/90 to-slate-900/95"></div>
@@ -89,7 +129,7 @@ export default function Contact() {
           {/* Top Content */}
           <div className="relative z-10">
             <h2 className="text-4xl lg:text-5xl font-bold font-sans tracking-tight mb-6 leading-tight">
-              Let's craft the <br/>
+              Let's craft the <br />
               <span className="text-blue-400">future together.</span>
             </h2>
             <p className="text-slate-300 text-lg leading-relaxed max-w-sm">
@@ -123,7 +163,7 @@ export default function Contact() {
 
         {/* --- RIGHT SIDE: FORM --- */}
         <div className="w-full md:w-7/12 lg:w-1/2 p-8 lg:p-14 bg-white flex flex-col justify-center relative">
-          
+
           <div className="max-w-md mx-auto w-full">
             <div className="mb-8">
               <h1 className="text-2xl font-bold text-slate-800 mb-2">Send us a message</h1>
@@ -131,7 +171,7 @@ export default function Contact() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              
+
               {/* Name Input */}
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -145,8 +185,8 @@ export default function Contact() {
                   onChange={handleChange}
                   placeholder="John Smith"
                   className={`w-full px-4 py-3 rounded-lg bg-slate-50 border text-slate-900 text-sm transition-all focus:bg-white focus:ring-2 outline-none
-                    ${errors.name 
-                      ? "border-red-300 focus:ring-red-100" 
+                    ${errors.name
+                      ? "border-red-300 focus:ring-red-100"
                       : "border-slate-200 focus:border-blue-500 focus:ring-blue-100 hover:border-blue-300"
                     }`}
                 />
@@ -168,8 +208,8 @@ export default function Contact() {
                     onChange={handleChange}
                     placeholder="john@example.com"
                     className={`w-full px-4 py-3 rounded-lg bg-slate-50 border text-slate-900 text-sm transition-all focus:bg-white focus:ring-2 outline-none
-                      ${errors.email 
-                        ? "border-red-300 focus:ring-red-100" 
+                      ${errors.email
+                        ? "border-red-300 focus:ring-red-100"
                         : "border-slate-200 focus:border-blue-500 focus:ring-blue-100 hover:border-blue-300"
                       }`}
                   />
@@ -185,10 +225,10 @@ export default function Contact() {
                       value={form.role}
                       onChange={handleChange}
                       className={`w-full px-4 py-3 rounded-lg bg-slate-50 border text-slate-900 text-sm appearance-none cursor-pointer transition-all focus:bg-white focus:ring-2 outline-none
-                      ${errors.role 
-                        ? "border-red-300 focus:ring-red-100" 
-                        : "border-slate-200 focus:border-blue-500 focus:ring-blue-100 hover:border-blue-300"
-                      }`}
+                      ${errors.role
+                          ? "border-red-300 focus:ring-red-100"
+                          : "border-slate-200 focus:border-blue-500 focus:ring-blue-100 hover:border-blue-300"
+                        }`}
                     >
                       <option value="" disabled>Select Role</option>
                       <option value="Student">Student</option>
@@ -217,8 +257,8 @@ export default function Contact() {
                   rows="4"
                   placeholder="How can we help you today?"
                   className={`w-full px-4 py-3 rounded-lg bg-slate-50 border text-slate-900 text-sm transition-all focus:bg-white focus:ring-2 outline-none resize-none
-                    ${errors.message 
-                      ? "border-red-300 focus:ring-red-100" 
+                    ${errors.message
+                      ? "border-red-300 focus:ring-red-100"
                       : "border-slate-200 focus:border-blue-500 focus:ring-blue-100 hover:border-blue-300"
                     }`}
                 />
@@ -231,8 +271,8 @@ export default function Contact() {
                 disabled={status === "loading" || status === "success"}
                 className={`
                   w-full group flex items-center justify-center gap-2 py-3.5 rounded-lg font-bold text-white transition-all duration-300 shadow-lg shadow-blue-500/20
-                  ${status === "success" 
-                    ? "bg-green-500 hover:bg-green-600 scale-[1.02]" 
+                  ${status === "success"
+                    ? "bg-green-500 hover:bg-green-600 scale-[1.02]"
                     : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 hover:-translate-y-0.5"
                   }
                   ${status === "loading" ? "opacity-90 cursor-wait" : ""}

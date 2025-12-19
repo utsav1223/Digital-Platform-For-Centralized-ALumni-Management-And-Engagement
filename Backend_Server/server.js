@@ -10,6 +10,7 @@ import studentRoutes from "./routes/studentRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import adminEventRoutes from "./routes/adminEventRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
 import path from "path";
 const app = express();
 
@@ -58,6 +59,7 @@ app.use("/api/admin/events", adminEventRoutes);
 app.use("/api/admin", adminRoutes);
 // app.use("/uploads", express.static("uploads"));
 
+app.use("/api", contactRoutes);
 
 
 app.use(
